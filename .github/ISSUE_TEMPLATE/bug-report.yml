@@ -1,0 +1,71 @@
+name: Bug Report
+description: File a bug report
+title: "[BUG]: "
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description:
+        Describe the bug clearly. What did you see, and what did you expect to
+        see instead?
+      placeholder: When I render <HelloWorld> with ..., it does X.
+        I expected Y.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps someone else can follow to see the same
+        bug.
+      placeholder: |
+        1. Install @weburz/my-module
+        2. Add <HelloWorld /> to a page
+        3. Open the page in <browser>
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: input
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description:
+        A link to a minimal repro is the single most helpful thing you can
+        provide. Use StackBlitz, CodeSandbox, or a small public GitHub repo.
+      placeholder: https://stackblitz.com/edit/...
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Versions of the relevant tools and the platform you saw the
+        bug on.
+      value: |
+        - `@weburz/my-module` version:
+        - Nuxt version:
+        - Node.js version:
+        - Package manager (pnpm / npm / yarn / bun) + version:
+        - OS:
+        - Browser + version:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Console errors, build output, anything related. No need for
+        backticks — this auto-formats as a shell block.
+      render: Shell
