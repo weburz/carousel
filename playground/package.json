@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "@weburz/carousel": "workspace:*",
-    "nuxt": "^4.4.5"
+    "nuxt": "^4.4.8"
   }
 }
