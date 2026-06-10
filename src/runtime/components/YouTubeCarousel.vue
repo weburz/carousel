@@ -343,20 +343,20 @@ useScrollAwayHandler(
   overflow: hidden;
   /* Breathing room inside the slide so borders/shadows aren't clipped by the
      carousel viewport's overflow:hidden. */
-  margin: var(--carousel-media-margin, 0);
-  border: var(--yt-border, var(--carousel-media-border, none));
-  border-radius: var(--yt-radius, var(--carousel-media-radius, 0.5rem));
-  box-shadow: var(--yt-shadow, var(--carousel-media-shadow, none));
+  margin: var(--weburz-carousel-media-margin, 0);
+  border: var(--weburz-yt-border, var(--weburz-carousel-media-border, none));
+  border-radius: var(--weburz-yt-radius, var(--weburz-carousel-media-radius, 0.5rem));
+  box-shadow: var(--weburz-yt-shadow, var(--weburz-carousel-media-shadow, none));
   background: #000;
 }
 
 .weburz-yt--video {
-  aspect-ratio: var(--yt-video-aspect, 16 / 9);
+  aspect-ratio: var(--weburz-yt-video-aspect, 16 / 9);
 }
 
 .weburz-yt--shorts {
-  aspect-ratio: var(--yt-shorts-aspect, 9 / 16);
-  max-width: var(--yt-shorts-max-width, 24rem);
+  aspect-ratio: var(--weburz-yt-shorts-aspect, 9 / 16);
+  max-width: var(--weburz-yt-shorts-max-width, 24rem);
   margin-inline: auto;
 }
 
@@ -371,12 +371,12 @@ useScrollAwayHandler(
 }
 
 .weburz-caption {
-  margin-top: var(--carousel-caption-gap, 0.75rem);
-  text-align: var(--carousel-caption-align, center);
+  margin-top: var(--weburz-carousel-caption-gap, 0.75rem);
+  text-align: var(--weburz-carousel-caption-align, center);
 }
 
 .weburz-active-caption {
-  text-align: var(--carousel-active-caption-align, start);
+  text-align: var(--weburz-carousel-active-caption-align, start);
 }
 
 .weburz-fade-enter-active,
@@ -396,12 +396,12 @@ useScrollAwayHandler(
 
 .weburz-caption__title {
   margin: 0;
-  font-size: var(--carousel-caption-title-size, 1rem);
-  font-weight: var(--carousel-caption-title-weight, 600);
+  font-size: var(--weburz-carousel-caption-title-size, 1rem);
+  font-weight: var(--weburz-carousel-caption-title-weight, 600);
 }
 
 .weburz-caption__title a {
-  color: var(--carousel-caption-title-color, inherit);
+  color: var(--weburz-carousel-caption-title-color, inherit);
   text-decoration: none;
 }
 
@@ -411,8 +411,8 @@ useScrollAwayHandler(
 
 .weburz-caption__description {
   margin: 0.25rem 0 0;
-  font-size: var(--carousel-caption-description-size, 0.875rem);
-  color: var(--carousel-caption-description-color, inherit);
-  opacity: var(--carousel-caption-description-opacity, 0.7);
+  font-size: var(--weburz-carousel-caption-description-size, 0.875rem);
+  color: var(--weburz-carousel-caption-description-color, inherit);
+  opacity: var(--weburz-carousel-caption-description-opacity, 0.7);
 }
 </style>

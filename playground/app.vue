@@ -407,9 +407,9 @@ body,
   margin: 0 auto;
 
   /* Theme the carousel via CSS variables */
-  --carousel-accent: #00dc82;
-  --carousel-dot-color: #fff;
-  --carousel-dot-active-color: #00dc82;
+  --weburz-carousel-accent: #00dc82;
+  --weburz-carousel-dot-color: #fff;
+  --weburz-carousel-dot-active-color: #00dc82;
 }
 
 .demo {
@@ -464,10 +464,10 @@ body,
   border-radius: 1rem;
   transition: background 0.3s ease, color 0.3s ease;
 
-  --carousel-dot-size: 0.7rem;
-  --carousel-dot-opacity: 1;
-  --carousel-dot-active-scale: 1.5;
-  --carousel-dot-gap: 1rem;
+  --weburz-carousel-dot-size: 0.7rem;
+  --weburz-carousel-dot-opacity: 1;
+  --weburz-carousel-dot-active-scale: 1.5;
+  --weburz-carousel-dot-gap: 1rem;
 }
 
 .themed--light {
@@ -476,9 +476,9 @@ body,
   background: linear-gradient(90deg, #ffbff1 0%, #fff4fd 65%);
   color: #1e1b2e;
 
-  --carousel-dot-color: var(--primary);
-  --carousel-dot-active-color: var(--accent);
-  --carousel-arrow-color: var(--primary);
+  --weburz-carousel-dot-color: var(--primary);
+  --weburz-carousel-dot-active-color: var(--accent);
+  --weburz-carousel-arrow-color: var(--primary);
 }
 
 .themed--dark {
@@ -486,9 +486,9 @@ body,
   background: #1e1b2e;
   color: #f1f1f1;
 
-  --carousel-dot-color: #f1f1f1;
-  --carousel-dot-active-color: var(--primary);
-  --carousel-arrow-color: #f1f1f1;
+  --weburz-carousel-dot-color: #f1f1f1;
+  --weburz-carousel-dot-active-color: var(--primary);
+  --weburz-carousel-arrow-color: #f1f1f1;
 }
 
 .themed--neutral {
@@ -496,20 +496,20 @@ body,
   background: #f1f1f1;
   color: #1e1b2e;
 
-  --carousel-dot-color: #1e1b2e;
-  --carousel-dot-active-color: var(--accent);
-  --carousel-arrow-color: rgba(85, 50, 133, 1);
+  --weburz-carousel-dot-color: #1e1b2e;
+  --weburz-carousel-dot-active-color: var(--accent);
+  --weburz-carousel-arrow-color: rgba(85, 50, 133, 1);
 }
 
 /* Framed media: one set of vars covers YouTube, Instagram and TikTok embeds.
-   Use --yt-border / --instagram-border / --tiktok-border for per-platform
+   Use --weburz-yt-border / --weburz-instagram-border / --weburz-tiktok-border for per-platform
    overrides. The media margin gives the shadow room inside the slide so the
    carousel viewport's overflow:hidden doesn't clip it. */
 .framed {
-  --carousel-media-border: 0.25rem solid #00dc82;
-  --carousel-media-radius: 1.25rem;
-  --carousel-media-shadow: 0 0 30px rgba(0, 220, 130, 0.35);
-  --carousel-media-margin: 2.5rem;
+  --weburz-carousel-media-border: 0.25rem solid #00dc82;
+  --weburz-carousel-media-radius: 1.25rem;
+  --weburz-carousel-media-shadow: 0 0 30px rgba(0, 220, 130, 0.35);
+  --weburz-carousel-media-margin: 2.5rem;
 }
 
 .custom-heading__eyebrow {

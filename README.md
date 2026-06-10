@@ -190,7 +190,7 @@ accept:
 ```
 
 The default heading markup is styleable without the slot too — see the
-`--carousel-title-*` / `--carousel-description-*` variables under
+`--weburz-carousel-title-*` / `--weburz-carousel-description-*` variables under
 [Theming](#theming).
 
 ## Captions & metadata
@@ -245,68 +245,68 @@ styles:
 
 ```css
 .my-page {
-  --carousel-accent: #00dc82;
-  --carousel-gap: 1rem;             /* stack gap: heading / stage / nav */
-  --carousel-slide-gap: 1rem;       /* gap between slides */
+  --weburz-carousel-accent: #00dc82;
+  --weburz-carousel-gap: 1rem;             /* stack gap: heading / stage / nav */
+  --weburz-carousel-slide-gap: 1rem;       /* gap between slides */
   /* Arrows are plain chevrons by default — add bg/border to get buttons back */
-  --carousel-arrow-size: 2rem;
-  --carousel-arrow-font-size: 1.5rem;
-  --carousel-arrow-space: 3rem;     /* horizontal room reserved in 'sides' mode */
-  --carousel-arrow-color: #fff;
-  --carousel-arrow-bg: transparent;
-  --carousel-arrow-border: none;
-  --carousel-arrow-radius: 0.25rem;
-  --carousel-dot-size: 0.625rem;
-  --carousel-dot-gap: 0.5rem;
-  --carousel-dot-radius: 50%;
-  --carousel-dot-opacity: 0.3;          /* inactive dots */
-  --carousel-dot-color: #fff;
-  --carousel-dot-active-color: var(--carousel-accent);
-  --carousel-dot-active-scale: 1;       /* e.g. 1.5 for a growing active dot */
+  --weburz-carousel-arrow-size: 2rem;
+  --weburz-carousel-arrow-font-size: 1.5rem;
+  --weburz-carousel-arrow-space: 3rem;     /* horizontal room reserved in 'sides' mode */
+  --weburz-carousel-arrow-color: #fff;
+  --weburz-carousel-arrow-bg: transparent;
+  --weburz-carousel-arrow-border: none;
+  --weburz-carousel-arrow-radius: 0.25rem;
+  --weburz-carousel-dot-size: 0.625rem;
+  --weburz-carousel-dot-gap: 0.5rem;
+  --weburz-carousel-dot-radius: 50%;
+  --weburz-carousel-dot-opacity: 0.3;          /* inactive dots */
+  --weburz-carousel-dot-color: #fff;
+  --weburz-carousel-dot-active-color: var(--weburz-carousel-accent);
+  --weburz-carousel-dot-active-scale: 1;       /* e.g. 1.5 for a growing active dot */
 
-  --carousel-title-size: 1.375rem;
-  --carousel-title-weight: 600;
-  --carousel-title-color: inherit;
-  --carousel-description-size: 0.9375rem;
-  --carousel-description-color: inherit;
-  --carousel-description-opacity: 0.65;
+  --weburz-carousel-title-size: 1.375rem;
+  --weburz-carousel-title-weight: 600;
+  --weburz-carousel-title-color: inherit;
+  --weburz-carousel-description-size: 0.9375rem;
+  --weburz-carousel-description-color: inherit;
+  --weburz-carousel-description-opacity: 0.65;
 
   /* per-slide captions */
-  --carousel-caption-gap: 0.75rem;
-  --carousel-caption-align: center;
-  --carousel-caption-title-size: 1rem;
-  --carousel-caption-title-weight: 600;
-  --carousel-caption-title-color: inherit;
-  --carousel-caption-description-size: 0.875rem;
-  --carousel-caption-description-color: inherit;
-  --carousel-caption-description-opacity: 0.7;
+  --weburz-carousel-caption-gap: 0.75rem;
+  --weburz-carousel-caption-align: center;
+  --weburz-carousel-caption-title-size: 1rem;
+  --weburz-carousel-caption-title-weight: 600;
+  --weburz-carousel-caption-title-color: inherit;
+  --weburz-carousel-caption-description-size: 0.875rem;
+  --weburz-carousel-caption-description-color: inherit;
+  --weburz-carousel-caption-description-opacity: 0.7;
 
   /* layout="aside" (breakpoint is fixed at 768px) */
-  --carousel-aside-column: minmax(12rem, 1fr);  /* heading column sizing */
-  --carousel-aside-stage: 2fr;                  /* carousel column sizing */
-  --carousel-aside-gap: 2.5rem;
+  --weburz-carousel-aside-column: minmax(12rem, 1fr);  /* heading column sizing */
+  --weburz-carousel-aside-stage: 2fr;                  /* carousel column sizing */
+  --weburz-carousel-aside-gap: 2.5rem;
 
   /* media frame — applies to YouTube, Instagram and TikTok embeds alike;
-     override per platform with --yt-border / --instagram-border / --tiktok-border
+     override per platform with --weburz-yt-border / --weburz-instagram-border / --weburz-tiktok-border
      (and the matching -radius / -shadow variants) */
-  --carousel-media-border: none;        /* e.g. 0.25rem solid var(--brand-primary) */
-  --carousel-media-radius: 0.5rem;
-  --carousel-media-shadow: none;        /* e.g. 0 10px 40px rgb(0 0 0 / 0.3) */
-  --carousel-media-margin: 0;           /* set ~the shadow's blur radius so the
+  --weburz-carousel-media-border: none;        /* e.g. 0.25rem solid var(--brand-primary) */
+  --weburz-carousel-media-radius: 0.5rem;
+  --weburz-carousel-media-shadow: none;        /* e.g. 0 10px 40px rgb(0 0 0 / 0.3) */
+  --weburz-carousel-media-margin: 0;           /* set ~the shadow's blur radius so the
                                            viewport's overflow:hidden can't clip it */
 
-  --yt-radius: 0.5rem;
-  --yt-video-aspect: 16 / 9;
-  --yt-shorts-aspect: 9 / 16;
-  --yt-shorts-max-width: 24rem;
+  --weburz-yt-radius: 0.5rem;
+  --weburz-yt-video-aspect: 16 / 9;
+  --weburz-yt-shorts-aspect: 9 / 16;
+  --weburz-yt-shorts-max-width: 24rem;
 
-  --instagram-max-width: 22rem;
-  --instagram-aspect: 9 / 16;
+  --weburz-instagram-max-width: 22rem;
+  --weburz-instagram-aspect: 9 / 16;
 
   /* TikTok's embed card is fixed ~323x757px — these defaults match it.
      Wider → white side gutters; shorter → the music line gets clipped. */
-  --tiktok-max-width: 20.3125rem;
-  --tiktok-min-height: 47.5rem;
+  --weburz-tiktok-max-width: 20.3125rem;
+  --weburz-tiktok-min-height: 47.5rem;
 }
 ```
 
@@ -315,9 +315,9 @@ To integrate with a design system, map them once inside your theme classes —
 
 ```css
 html.dark {
-  --carousel-dot-color: var(--text-primary);
-  --carousel-dot-active-color: var(--brand-primary);
-  --carousel-arrow-color: var(--text-primary);
+  --weburz-carousel-dot-color: var(--text-primary);
+  --weburz-carousel-dot-active-color: var(--brand-primary);
+  --weburz-carousel-arrow-color: var(--text-primary);
 }
 ```
 

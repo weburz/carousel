@@ -236,23 +236,23 @@ useScrollAwayHandler(
 
 .weburz-instagram-embed {
   display: block;
-  margin: var(--carousel-media-margin, 0) auto;
+  margin: var(--weburz-carousel-media-margin, 0) auto;
   width: 100%;
-  max-width: var(--instagram-max-width, 22rem);
-  aspect-ratio: var(--instagram-aspect, 9 / 16);
-  background: var(--instagram-bg, #fff);
-  border: var(--instagram-border, var(--carousel-media-border, none));
-  border-radius: var(--instagram-radius, var(--carousel-media-radius, 0.5rem));
-  box-shadow: var(--instagram-shadow, var(--carousel-media-shadow, none));
+  max-width: var(--weburz-instagram-max-width, 22rem);
+  aspect-ratio: var(--weburz-instagram-aspect, 9 / 16);
+  background: var(--weburz-instagram-bg, #fff);
+  border: var(--weburz-instagram-border, var(--weburz-carousel-media-border, none));
+  border-radius: var(--weburz-instagram-radius, var(--weburz-carousel-media-radius, 0.5rem));
+  box-shadow: var(--weburz-instagram-shadow, var(--weburz-carousel-media-shadow, none));
 }
 
 .weburz-caption {
-  margin-top: var(--carousel-caption-gap, 0.75rem);
-  text-align: var(--carousel-caption-align, center);
+  margin-top: var(--weburz-carousel-caption-gap, 0.75rem);
+  text-align: var(--weburz-carousel-caption-align, center);
 }
 
 .weburz-active-caption {
-  text-align: var(--carousel-active-caption-align, start);
+  text-align: var(--weburz-carousel-active-caption-align, start);
 }
 
 .weburz-fade-enter-active,
@@ -272,12 +272,12 @@ useScrollAwayHandler(
 
 .weburz-caption__title {
   margin: 0;
-  font-size: var(--carousel-caption-title-size, 1rem);
-  font-weight: var(--carousel-caption-title-weight, 600);
+  font-size: var(--weburz-carousel-caption-title-size, 1rem);
+  font-weight: var(--weburz-carousel-caption-title-weight, 600);
 }
 
 .weburz-caption__title a {
-  color: var(--carousel-caption-title-color, inherit);
+  color: var(--weburz-carousel-caption-title-color, inherit);
   text-decoration: none;
 }
 
@@ -287,8 +287,8 @@ useScrollAwayHandler(
 
 .weburz-caption__description {
   margin: 0.25rem 0 0;
-  font-size: var(--carousel-caption-description-size, 0.875rem);
-  color: var(--carousel-caption-description-color, inherit);
-  opacity: var(--carousel-caption-description-opacity, 0.7);
+  font-size: var(--weburz-carousel-caption-description-size, 0.875rem);
+  color: var(--weburz-carousel-caption-description-color, inherit);
+  opacity: var(--weburz-carousel-caption-description-opacity, 0.7);
 }
 </style>

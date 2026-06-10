@@ -20,7 +20,7 @@ const slidesPerView = inject<Ref<number>>(
 const flexBasis = computed(() => {
   const n = slidesPerView.value
   if (n <= 1) return '100%'
-  return `calc((100% - ${n - 1} * var(--carousel-slide-gap, 1rem)) / ${n})`
+  return `calc((100% - ${n - 1} * var(--weburz-carousel-slide-gap, 1rem)) / ${n})`
 })
 </script>
 
