@@ -182,7 +182,7 @@ watch(activeIndex, i => emit('select', i))
 .weburz-carousel {
   display: flex;
   flex-direction: column;
-  gap: var(--carousel-gap, 1rem);
+  gap: var(--weburz-carousel-gap, 1rem);
 }
 
 /* Aside layout: heading + nav cluster beside the carousel (left by default,
@@ -192,7 +192,7 @@ watch(activeIndex, i => emit('select', i))
 @media (min-width: 768px) {
   .weburz-carousel--aside {
     display: grid;
-    grid-template-columns: var(--carousel-aside-column, minmax(12rem, 1fr)) minmax(0, var(--carousel-aside-stage, 2fr));
+    grid-template-columns: var(--weburz-carousel-aside-column, minmax(12rem, 1fr)) minmax(0, var(--weburz-carousel-aside-stage, 2fr));
     /* 1fr filler rows above and below keep the heading + nav cluster
        vertically centered against the stage. */
     grid-template-rows: 1fr auto auto 1fr;
@@ -201,12 +201,12 @@ watch(activeIndex, i => emit('select', i))
       "heading stage"
       "nav     stage"
       ".       stage";
-    column-gap: var(--carousel-aside-gap, 2.5rem);
+    column-gap: var(--weburz-carousel-aside-gap, 2.5rem);
     row-gap: 0;
   }
 
   .weburz-carousel--aside-right {
-    grid-template-columns: minmax(0, var(--carousel-aside-stage, 2fr)) var(--carousel-aside-column, minmax(12rem, 1fr));
+    grid-template-columns: minmax(0, var(--weburz-carousel-aside-stage, 2fr)) var(--weburz-carousel-aside-column, minmax(12rem, 1fr));
     grid-template-areas:
       "stage ."
       "stage heading"
@@ -220,7 +220,7 @@ watch(activeIndex, i => emit('select', i))
 
   .weburz-carousel--aside .weburz-carousel__nav {
     grid-area: nav;
-    margin-top: var(--carousel-gap, 1rem);
+    margin-top: var(--weburz-carousel-gap, 1rem);
     justify-content: flex-start;
   }
 
@@ -232,16 +232,16 @@ watch(activeIndex, i => emit('select', i))
 
 .weburz-carousel__title {
   margin: 0;
-  font-size: var(--carousel-title-size, 1.375rem);
-  font-weight: var(--carousel-title-weight, 600);
-  color: var(--carousel-title-color, inherit);
+  font-size: var(--weburz-carousel-title-size, 1.375rem);
+  font-weight: var(--weburz-carousel-title-weight, 600);
+  color: var(--weburz-carousel-title-color, inherit);
 }
 
 .weburz-carousel__description {
   margin: 0.375rem 0 0;
-  font-size: var(--carousel-description-size, 0.9375rem);
-  color: var(--carousel-description-color, inherit);
-  opacity: var(--carousel-description-opacity, 0.65);
+  font-size: var(--weburz-carousel-description-size, 0.9375rem);
+  color: var(--weburz-carousel-description-color, inherit);
+  opacity: var(--weburz-carousel-description-opacity, 0.65);
 }
 
 .weburz-carousel__stage {
@@ -254,20 +254,20 @@ watch(activeIndex, i => emit('select', i))
 
 .weburz-carousel__container {
   display: flex;
-  gap: var(--carousel-slide-gap, 1rem);
+  gap: var(--weburz-carousel-slide-gap, 1rem);
 }
 
 .weburz-carousel__nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--carousel-nav-gap, 1rem);
+  gap: var(--weburz-carousel-nav-gap, 1rem);
 }
 
 /* Sides mode: reserve horizontal space outside the viewport so the arrows live
    beside the slide content, not on top of it. */
 .weburz-carousel__stage--arrows-sides {
-  padding-inline: var(--carousel-arrow-space, 3rem);
+  padding-inline: var(--weburz-carousel-arrow-space, 3rem);
 }
 
 .weburz-carousel__stage--arrows-sides .weburz-carousel__arrows {
@@ -284,25 +284,25 @@ watch(activeIndex, i => emit('select', i))
 }
 
 .weburz-carousel__stage--arrows-sides .weburz-carousel__arrow--prev {
-  left: calc((var(--carousel-arrow-space, 3rem) - var(--carousel-arrow-size, 2.5rem)) / 2);
+  left: calc((var(--weburz-carousel-arrow-space, 3rem) - var(--weburz-carousel-arrow-size, 2.5rem)) / 2);
 }
 
 .weburz-carousel__stage--arrows-sides .weburz-carousel__arrow--next {
-  right: calc((var(--carousel-arrow-space, 3rem) - var(--carousel-arrow-size, 2.5rem)) / 2);
+  right: calc((var(--weburz-carousel-arrow-space, 3rem) - var(--weburz-carousel-arrow-size, 2.5rem)) / 2);
 }
 
 .weburz-carousel__arrow {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--carousel-arrow-size, 2rem);
-  height: var(--carousel-arrow-size, 2rem);
-  border: var(--carousel-arrow-border, none);
-  background: var(--carousel-arrow-bg, transparent);
-  color: var(--carousel-arrow-color, currentColor);
-  border-radius: var(--carousel-arrow-radius, 0.25rem);
+  width: var(--weburz-carousel-arrow-size, 2rem);
+  height: var(--weburz-carousel-arrow-size, 2rem);
+  border: var(--weburz-carousel-arrow-border, none);
+  background: var(--weburz-carousel-arrow-bg, transparent);
+  color: var(--weburz-carousel-arrow-color, currentColor);
+  border-radius: var(--weburz-carousel-arrow-radius, 0.25rem);
   cursor: pointer;
-  font-size: var(--carousel-arrow-font-size, 1.5rem);
+  font-size: var(--weburz-carousel-arrow-font-size, 1.5rem);
   line-height: 1;
   padding: 0;
   transition: opacity 0.15s ease, background 0.15s ease;
@@ -317,7 +317,7 @@ watch(activeIndex, i => emit('select', i))
 }
 
 .weburz-carousel__arrow:focus-visible {
-  outline: 2px solid var(--carousel-accent, currentColor);
+  outline: 2px solid var(--weburz-carousel-accent, currentColor);
   outline-offset: 2px;
 }
 
@@ -328,17 +328,17 @@ watch(activeIndex, i => emit('select', i))
 
 .weburz-carousel__dots {
   display: flex;
-  gap: var(--carousel-dot-gap, 0.5rem);
+  gap: var(--weburz-carousel-dot-gap, 0.5rem);
   justify-content: center;
 }
 
 .weburz-carousel__dot {
-  width: var(--carousel-dot-size, 0.625rem);
-  height: var(--carousel-dot-size, 0.625rem);
-  border-radius: var(--carousel-dot-radius, 50%);
+  width: var(--weburz-carousel-dot-size, 0.625rem);
+  height: var(--weburz-carousel-dot-size, 0.625rem);
+  border-radius: var(--weburz-carousel-dot-radius, 50%);
   border: none;
-  background: var(--carousel-dot-color, currentColor);
-  opacity: var(--carousel-dot-opacity, 0.3);
+  background: var(--weburz-carousel-dot-color, currentColor);
+  opacity: var(--weburz-carousel-dot-opacity, 0.3);
   padding: 0;
   cursor: pointer;
   transition: opacity 0.2s ease, transform 0.3s ease, background 0.3s ease;
@@ -346,7 +346,7 @@ watch(activeIndex, i => emit('select', i))
 
 .weburz-carousel__dot.is-active {
   opacity: 1;
-  background: var(--carousel-dot-active-color, var(--carousel-accent, currentColor));
-  transform: scale(var(--carousel-dot-active-scale, 1));
+  background: var(--weburz-carousel-dot-active-color, var(--weburz-carousel-accent, currentColor));
+  transform: scale(var(--weburz-carousel-dot-active-scale, 1));
 }
 </style>
