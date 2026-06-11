@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## v0.2.0
+
+[compare changes](https://github.com/Weburz/carousel/compare/v0.1.1...v0.2.0)
+
+### 🚀 Enhancements
+
+- Support breakpoint maps for slidesPerView with SSR-correct media queries ([8a8a416](https://github.com/Weburz/carousel/commit/8a8a416))
+
+### ❤️ Contributors
+
+- Sagar-Kap ([@sagar-kap](https://github.com/sagar-kap))
+
 ## v0.1.1
 
 [compare changes](https://github.com/Weburz/carousel/compare/v0.1.0...v0.1.1)
