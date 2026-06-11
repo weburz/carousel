@@ -22,6 +22,18 @@
       </BaseSlide>
     </BaseCarousel>
 
+    <BaseCarousel
+      :slides-per-view="2"
+      aria-label="Two-up test carousel"
+    >
+      <BaseSlide
+        v-for="i in 4"
+        :key="i"
+      >
+        <p>Two-up slide {{ i }}</p>
+      </BaseSlide>
+    </BaseCarousel>
+
     <YouTubeCarousel
       :videos="ytVideos"
       mode="iframe-embed"

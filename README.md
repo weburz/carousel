@@ -26,6 +26,7 @@ don't have to earn them the hard way.
 - 🧱 Layouts with range — stacked or magazine-style aside (left *or* right), arrows wherever you want them
 - 🎰 Slots for everything — custom headings, custom arrow icons, your markup wins
 - 🎨 ~40 CSS variables to theme with, zero `!important` battles
+- 📐 SSR-safe responsive slide counts — `--weburz-carousel-slides` in a media query, no hydration snap
 - 🧩 Auto-imported composables: `useCarousel`, `useYouTubePlayer`, `useInstagramEmbed`, `useTikTokEmbed`, `useEmbedMetadata`
 - 🟦 First-class TypeScript types
 
@@ -132,9 +133,9 @@ Shared by all carousels:
 | ---- | ---- | ------- | ----------- |
 | `options` | `EmblaOptionsType` | `{}` | Embla carousel options |
 | `plugins` | `EmblaPluginType[]` | `[]` | Embla plugins (autoplay, etc.) |
-| `slidesPerView` | `number` | `1` | Slides visible at once |
-| `showArrows` | `boolean` | `true` | Render prev/next arrows |
-| `showDots` | `boolean` | `true` | Render dot pagination |
+| `slidesPerView` | `number` | `1` | Slides visible at once. For viewport-dependent counts prefer the `--weburz-carousel-slides` CSS variable — see [Responsive slide counts](#responsive-slide-counts-ssr-safe) |
+| `showArrows` | `boolean` | `true` | Render prev/next arrows — auto-hidden when there's only one scroll position |
+| `showDots` | `boolean` | `true` | Render dot pagination — hidden when there's only one scroll position |
 | `arrowPosition` | `'sides' \| 'below'` | `'below'` | Arrows flanking the dots (default) or beside the stage |
 | `layout` | `'stacked' \| 'aside'` | `'stacked'` | `'aside'` puts title, description, and nav in a side column next to the carousel (≥768px; stacks below that) |
 | `asidePosition` | `'left' \| 'right'` | `'left'` | Which side the aside column sits on (only applies with `layout="aside"`) |
@@ -248,6 +249,8 @@ styles:
   --weburz-carousel-accent: #00dc82;
   --weburz-carousel-gap: 1rem;             /* stack gap: heading / stage / nav */
   --weburz-carousel-slide-gap: 1rem;       /* gap between slides */
+  /* --weburz-carousel-slides: 3;             slides per view — wins over the slidesPerView
+                                              prop; see Responsive slide counts below */
   /* Arrows are plain chevrons by default — add bg/border to get buttons back */
   --weburz-carousel-arrow-size: 2rem;
   --weburz-carousel-arrow-font-size: 1.5rem;
@@ -325,6 +328,41 @@ html.dark {
 watcher. Arrows and dots default to `currentColor`, so even with zero mapping
 they already match the surrounding text color.
 
+## Responsive slide counts (SSR-safe)
+
+`slidesPerView` is a plain number, so driving it from JavaScript viewport
+detection (`useMediaQuery` and friends) has an SSR problem: media queries
+can't run on the server, so the server guesses one count, the browser
+hydrates to another, and the first slide visibly snaps to its real width.
+
+Set the count in CSS instead. The `--weburz-carousel-slides` variable takes
+precedence over the prop and lives in plain CSS, media queries included — the
+server-rendered HTML is correct for every viewport, no JavaScript involved:
+
+```vue
+<BaseCarousel class="cards" :options="{ align: 'start' }">
+  <BaseSlide v-for="card in cards" :key="card.id">…</BaseSlide>
+</BaseCarousel>
+```
+
+```css
+.cards {
+  --weburz-carousel-slides: 1;
+}
+
+@media (min-width: 48rem) {
+  .cards {
+    --weburz-carousel-slides: 3;
+  }
+}
+```
+
+This works on the platform carousels too — their slides live in the same
+cascade, so a class + media query on `<TikTokCarousel>` behaves identically.
+
+Keep the prop for counts that are genuinely static (`:slides-per-view="2"`)
+or genuinely dynamic at runtime — the variable, when set, always wins.
+
 ## Module options
 
 | Option   | Type     | Default | Description                                                      |
@@ -351,59 +389,82 @@ export default defineNuxtConfig({
 - `useTikTokEmbed()` — `load` / `reload` for TikTok's `embed.js` with the cache-bust trick needed after SPA navigation.
 - `useEmbedMetadata()` — `forYouTube(videoId)` / `forTikTok(url)` fetch `{ title, authorName, thumbnailUrl }` from the platforms' public oEmbed endpoints, cached per URL.
 
-## Contribution
+## Contributing
 
-<details>
-  <summary>Local development</summary>
+Contributions are welcome — bug reports, fixes, new platform quirk
+workarounds, docs. Day-to-day commands are wrapped in a
+[Taskfile](https://taskfile.dev), so you don't have to memorize the pnpm
+script names.
 
-  ```bash
-  pnpm install
-  pnpm run dev:prepare   # generate Nuxt type stubs
-  pnpm run dev           # run the playground
-  pnpm run test
-  pnpm run lint
-  ```
+### Prerequisites
 
-</details>
+- [Node.js](https://nodejs.org/) ≥ 20
+- [pnpm](https://pnpm.io/) 11 (`corepack enable` or `npm i -g pnpm`)
+- [Task](https://taskfile.dev/installation/) (`brew install go-task` /
+  `scoop install task` / see the install docs)
+- [pre-commit](https://pre-commit.com/) — optional but recommended
+  (`brew install pre-commit` or `pipx install pre-commit`)
 
-<details>
-  <summary>Pre-commit hooks</summary>
+### Getting started
 
-  This repo uses [pre-commit](https://pre-commit.com/) to enforce formatting,
-  lint staged files, and validate commit messages (conventional-commits style,
-  required by `changelogen` for the auto-generated [CHANGELOG](./CHANGELOG.md)).
+```bash
+git clone https://github.com/Weburz/carousel.git
+cd carousel
+task setup        # pnpm install + generate Nuxt type stubs
+task setup:hooks  # activate the pre-commit hooks (optional)
+task dev          # run the playground at http://localhost:3000
+```
 
-  Install once per clone:
+The playground (`playground/`) is a real Nuxt app with the module stubbed in —
+edit anything under `src/` and it hot-reloads.
 
-  ```bash
-  # If you don't have pre-commit yet:
-  brew install pre-commit          # macOS / Linuxbrew
-  # or: pipx install pre-commit
-  # or: pip install --user pre-commit
+### Everyday tasks
 
-  # Activate the hooks in this repo:
-  pnpm setup:hooks
-  ```
+Run `task` (no arguments) to see the full list. The ones you'll use most:
 
-  Skip hooks for a single commit with `git commit --no-verify` (use sparingly).
+| Command | What it does |
+| ------- | ------------ |
+| `task setup` | Install dependencies and generate Nuxt type stubs (run once per clone) |
+| `task dev` | Run the playground with hot reload |
+| `task test` | Run the test suite once (`task test:watch` for watch mode) |
+| `task test:types` | Type-check the module and the playground |
+| `task lint` | Lint everything (`task lint:fix` to auto-fix) |
+| `task check` | Everything CI runs: lint, type-check, tests, build |
+| `task build` | Build the distributable module into `dist/` |
+| `task clean` | Remove build artifacts (`task clean:all` also nukes `node_modules`) |
 
-</details>
+Before opening a PR, run `task check` — it mirrors the `Code QA Checks`
+GitHub workflow, so if it passes locally, CI should too.
 
-<details>
-  <summary>Release flow</summary>
+### Project layout
 
-  Local one-liner that lints, tests, builds the module, bumps the version +
-  CHANGELOG via `changelogen`, publishes to npm, and pushes the tag:
+```
+src/module.ts               # Nuxt module entry — registers components & composables
+src/runtime/components/     # BaseCarousel, YouTubeCarousel, InstagramCarousel, TikTokCarousel, …
+src/runtime/composables/    # useCarousel, useYouTubePlayer, useEmbedMetadata, …
+src/runtime/types.ts        # public TypeScript types
+playground/                 # demo Nuxt app for local dev (deployed to GitHub Pages)
+test/                       # Vitest + @nuxt/test-utils suite
+```
 
-  ```bash
-  pnpm release
-  ```
+### Commit messages & hooks
 
-  The `Deploy Playground` workflow publishes `playground/` to GitHub Pages on
-  every push to `main`. Enable Pages in the repository settings and set
-  **Source** to "GitHub Actions" to activate it.
+Commits must follow
+[Conventional Commits](https://www.conventionalcommits.org/) (`feat: …`,
+`fix: …`, `chore: …`) — the CHANGELOG is auto-generated from them by
+`changelogen`. The pre-commit hooks (installed via `task setup:hooks`) lint
+staged files and validate the commit message for you. Skip them for a single
+commit with `git commit --no-verify` (use sparingly).
 
-</details>
+### Releases (maintainers)
+
+```bash
+task release
+```
+
+Lints, tests, builds the module, bumps the version + CHANGELOG via
+`changelogen`, publishes to npm, and pushes the tag. The `Deploy Playground`
+workflow publishes `playground/` to GitHub Pages on every push to `main`.
 
 ## License
 

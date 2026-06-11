@@ -46,7 +46,7 @@
       </div>
 
       <div
-        v-if="showArrows && arrowPosition === 'sides'"
+        v-if="showArrowControls && arrowPosition === 'sides'"
         class="weburz-carousel__arrows"
       >
         <button
@@ -75,11 +75,11 @@
     </div>
 
     <div
-      v-if="(showArrows && arrowPosition === 'below') || (showDots && slideCount > 1)"
+      v-if="(showArrowControls && arrowPosition === 'below') || (showDots && slideCount > 1)"
       class="weburz-carousel__nav"
     >
       <button
-        v-if="showArrows && arrowPosition === 'below'"
+        v-if="showArrowControls && arrowPosition === 'below'"
         type="button"
         class="weburz-carousel__arrow weburz-carousel__arrow--prev"
         :disabled="!canScrollPrev"
@@ -110,7 +110,7 @@
       </div>
 
       <button
-        v-if="showArrows && arrowPosition === 'below'"
+        v-if="showArrowControls && arrowPosition === 'below'"
         type="button"
         class="weburz-carousel__arrow weburz-carousel__arrow--next"
         :disabled="!canScrollNext"
@@ -126,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, toRef, watch } from 'vue'
+import { computed, provide, toRef, watch } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
 import { useCarousel } from '../composables/useCarousel'
 
@@ -176,6 +176,14 @@ const {
 } = useCarousel(props.options, props.plugins)
 
 watch(activeIndex, i => emit('select', i))
+
+// Arrows are pointless with a single scroll position, so hide them once Embla
+// reports one. slideCount is 0 until Embla initializes (and during SSR) —
+// keep arrows in that state so multi-slide carousels don't get a nav pop-in
+// after hydration; only a confirmed single-snap carousel drops them.
+const showArrowControls = computed(
+  () => props.showArrows && slideCount.value !== 1,
+)
 </script>
 
 <style scoped>

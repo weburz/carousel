@@ -42,6 +42,17 @@ describe('@weburz/carousel', async () => {
     expect(html).toContain('weburz-carousel--aside')
   })
 
+  it('ships slidesPerView to CSS as a raw number', async () => {
+    const html = await $fetch('/')
+    // The count reaches CSS via a v-bind variable so the slide width math
+    // happens in calc(), where --weburz-carousel-slides (settable from
+    // consumer media queries) can override it SSR-correctly.
+    expect(html).toMatch(/--[\w-]+-slideCount:2/)
+    // A precomputed width in the HTML would mean JS decided the slide size
+    // again — the exact thing that caused the hydration width snap.
+    expect(html).not.toMatch(/-flexBasis:/)
+  })
+
   it('renders YouTubeCarousel iframes pointing at youtube-nocookie.com', async () => {
     const html = await $fetch('/')
     expect(html).toContain('youtube-nocookie.com/embed/abc12345678')
