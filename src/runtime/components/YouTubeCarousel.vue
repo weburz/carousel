@@ -116,7 +116,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { YouTubeCarouselMode, YouTubeVideo } from '../types'
+import type { SlidesPerView, YouTubeCarouselMode, YouTubeVideo } from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { useYouTubePlayer } from '../composables/useYouTubePlayer'
@@ -137,7 +137,7 @@ interface Props {
   fetchMetadata?: boolean
   options?: EmblaOptionsType
   plugins?: EmblaPluginType[]
-  slidesPerView?: number
+  slidesPerView?: SlidesPerView
   showArrows?: boolean
   showDots?: boolean
   arrowPosition?: 'sides' | 'below'

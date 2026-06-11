@@ -26,7 +26,7 @@ don't have to earn them the hard way.
 - 🧱 Layouts with range — stacked or magazine-style aside (left *or* right), arrows wherever you want them
 - 🎰 Slots for everything — custom headings, custom arrow icons, your markup wins
 - 🎨 ~40 CSS variables to theme with, zero `!important` battles
-- 📐 SSR-safe responsive slide counts — `--weburz-carousel-slides` in a media query, no hydration snap
+- 📐 SSR-safe responsive slide counts — `:slides-per-view="{ base: 1, '48rem': 3 }"`, no hydration snap
 - 🧩 Auto-imported composables: `useCarousel`, `useYouTubePlayer`, `useInstagramEmbed`, `useTikTokEmbed`, `useEmbedMetadata`
 - 🟦 First-class TypeScript types
 
@@ -133,7 +133,7 @@ Shared by all carousels:
 | ---- | ---- | ------- | ----------- |
 | `options` | `EmblaOptionsType` | `{}` | Embla carousel options |
 | `plugins` | `EmblaPluginType[]` | `[]` | Embla plugins (autoplay, etc.) |
-| `slidesPerView` | `number` | `1` | Slides visible at once. For viewport-dependent counts prefer the `--weburz-carousel-slides` CSS variable — see [Responsive slide counts](#responsive-slide-counts-ssr-safe) |
+| `slidesPerView` | `number \| Record<string, number>` | `1` | Slides visible at once — a number, or a breakpoint map (`{ base: 1, '48rem': 3 }`) rendered as SSR-correct media queries. See [Responsive slide counts](#responsive-slide-counts-ssr-safe) |
 | `showArrows` | `boolean` | `true` | Render prev/next arrows — auto-hidden when there's only one scroll position |
 | `showDots` | `boolean` | `true` | Render dot pagination — hidden when there's only one scroll position |
 | `arrowPosition` | `'sides' \| 'below'` | `'below'` | Arrows flanking the dots (default) or beside the stage |
@@ -330,20 +330,26 @@ they already match the surrounding text color.
 
 ## Responsive slide counts (SSR-safe)
 
-`slidesPerView` is a plain number, so driving it from JavaScript viewport
-detection (`useMediaQuery` and friends) has an SSR problem: media queries
-can't run on the server, so the server guesses one count, the browser
-hydrates to another, and the first slide visibly snaps to its real width.
+Driving `slidesPerView` from JavaScript viewport detection (`useMediaQuery`
+and friends) has an SSR problem: media queries can't run on the server, so
+the server guesses one count, the browser hydrates to another, and the first
+slide visibly snaps to its real width. (In dev mode the carousel detects this
+pattern and warns about it.)
 
-Set the count in CSS instead. The `--weburz-carousel-slides` variable takes
-precedence over the prop and lives in plain CSS, media queries included — the
-server-rendered HTML is correct for every viewport, no JavaScript involved:
+Pass a breakpoint map instead — keys are `base` plus any `min-width` length,
+and the carousel renders them as real CSS media queries, server-side:
 
 ```vue
-<BaseCarousel class="cards" :options="{ align: 'start' }">
+<BaseCarousel :slides-per-view="{ 'base': 1, '48rem': 3 }">
   <BaseSlide v-for="card in cards" :key="card.id">…</BaseSlide>
 </BaseCarousel>
 ```
+
+The server output is correct for every viewport with zero JavaScript
+involved, so there is nothing to snap on hydration.
+
+Prefer styling-level control? The same mechanism is exposed as the
+`--weburz-carousel-slides` CSS variable, which always wins over the prop:
 
 ```css
 .cards {
@@ -357,11 +363,11 @@ server-rendered HTML is correct for every viewport, no JavaScript involved:
 }
 ```
 
-This works on the platform carousels too — their slides live in the same
-cascade, so a class + media query on `<TikTokCarousel>` behaves identically.
+Both work on the platform carousels too — their slides live in the same
+cascade, so a map on `<TikTokCarousel>` behaves identically.
 
-Keep the prop for counts that are genuinely static (`:slides-per-view="2"`)
-or genuinely dynamic at runtime — the variable, when set, always wins.
+Keep the plain number for counts that are genuinely static
+(`:slides-per-view="2"`).
 
 ## Module options
 

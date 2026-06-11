@@ -53,6 +53,25 @@ describe('@weburz/carousel', async () => {
     expect(html).not.toMatch(/-flexBasis:/)
   })
 
+  it('renders a breakpoint map as server-side media queries', async () => {
+    const html = await $fetch('/')
+    // The map becomes a real <style> tag in the SSR payload — width is
+    // viewport-correct before any JS runs, so nothing snaps on hydration.
+    const style = html.match(
+      /<style[^>]*>([^<]*--weburz-carousel-slides:2[^<]*)<\/style>/,
+    )?.[1]
+    expect(style).toBeTruthy()
+    expect(style).toContain('@media (min-width: 48rem)')
+    expect(style).toContain('--weburz-carousel-slides:4')
+    // Raw-text <style> elements never decode entities, so the selector must
+    // survive SSR text escaping verbatim — no quotes, no &quot;.
+    expect(style).not.toContain('&')
+    // The style is scoped to its carousel instance via a data attribute.
+    const scope = style!.match(/\[data-weburz-slides=([\w-]+)\]/)?.[1]
+    expect(scope).toBeTruthy()
+    expect(html).toContain(`data-weburz-slides="${scope}"`)
+  })
+
   it('renders YouTubeCarousel iframes pointing at youtube-nocookie.com', async () => {
     const html = await $fetch('/')
     expect(html).toContain('youtube-nocookie.com/embed/abc12345678')

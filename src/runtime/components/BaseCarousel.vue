@@ -5,9 +5,16 @@
       `weburz-carousel--${layout}`,
       layout === 'aside' && `weburz-carousel--aside-${asidePosition}`,
     ]"
+    :data-weburz-slides="slidesCss ? uid : undefined"
     aria-roledescription="carousel"
     :aria-label="ariaLabel ?? title"
   >
+    <component
+      :is="'style'"
+      v-if="slidesCss"
+    >
+      {{ slidesCss }}
+    </component>
     <header
       v-if="$slots.heading || title || description"
       class="weburz-carousel__heading"
@@ -126,14 +133,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, toRef, watch } from 'vue'
+import { computed, onMounted, provide, useId, watch } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
 import { useCarousel } from '../composables/useCarousel'
+import { buildSlidesCss, resolveBaseSlides } from '../utils/slides'
+import type { SlidesPerView } from '../types'
 
 interface Props {
   options?: EmblaOptionsType
   plugins?: EmblaPluginType[]
-  slidesPerView?: number
+  slidesPerView?: SlidesPerView
   showArrows?: boolean
   showDots?: boolean
   arrowPosition?: 'sides' | 'below'
@@ -162,7 +171,25 @@ const emit = defineEmits<{
   select: [index: number]
 }>()
 
-provide('weburz-carousel-slides-per-view', toRef(props, 'slidesPerView'))
+// BaseSlide only needs the below-every-breakpoint count — breakpoint maps are
+// rendered as real CSS media queries (below), which win over this fallback.
+provide(
+  'weburz-carousel-slides-per-view',
+  computed(() => resolveBaseSlides(props.slidesPerView)),
+)
+
+// A breakpoint map becomes a <style> tag scoped to this instance via a data
+// attribute, so the server output is already viewport-correct — the whole
+// point of the map syntax over JS viewport detection.
+// The scope id is sanitized to a CSS identifier and the attribute selector
+// left unquoted: SSR HTML-escapes interpolated text, and escaped quotes
+// (&quot;) are NOT decoded inside a raw-text <style> element.
+const uid = `wbz-${useId().replace(/[^\w-]/g, '-')}`
+const slidesCss = computed(() =>
+  typeof props.slidesPerView === 'number'
+    ? null
+    : buildSlidesCss(`[data-weburz-slides=${uid}]`, props.slidesPerView),
+)
 
 const {
   carouselRef,
@@ -173,7 +200,33 @@ const {
   next,
   prev,
   scrollTo,
-} = useCarousel(props.options, props.plugins)
+} = useCarousel(
+  computed(() => props.options),
+  computed(() => props.plugins),
+)
+
+if (import.meta.dev) {
+  // A numeric slidesPerView changing right after mount is the signature of
+  // JS viewport detection (useMediaQuery and friends) resolving during
+  // hydration — the exact pattern that causes the SSR width snap.
+  onMounted(() => {
+    const mountedAt = Date.now()
+    const stop = watch(
+      () => props.slidesPerView,
+      (next, prev) => {
+        stop()
+        if (Date.now() - mountedAt > 1500) return
+        console.warn(
+          `[@weburz/carousel] slidesPerView changed from ${JSON.stringify(prev)} `
+          + `to ${JSON.stringify(next)} right after mount. If it is derived from `
+          + 'JS viewport detection (e.g. useMediaQuery), the server cannot know '
+          + 'the viewport and the slide width visibly snaps on hydration. Pass '
+          + 'a breakpoint map instead: :slides-per-view="{ base: 1, \'48rem\': 3 }"',
+        )
+      },
+    )
+  })
+}
 
 watch(activeIndex, i => emit('select', i))
 
