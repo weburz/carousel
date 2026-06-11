@@ -1,6 +1,6 @@
 {
   "name": "@weburz/carousel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Carousel components for Nuxt 4 — YouTube, Instagram, TikTok embeds with the platform lifecycle done right. Built on Embla.",
   "keywords": [
     "nuxt",
