@@ -26,6 +26,7 @@ don't have to earn them the hard way.
 - 🧱 Layouts with range — stacked or magazine-style aside (left *or* right), arrows wherever you want them
 - 🎰 Slots for everything — custom headings, custom arrow icons, your markup wins
 - 🎨 ~40 CSS variables to theme with, zero `!important` battles
+- 📐 SSR-safe responsive slide counts — `:slides-per-view="{ base: 1, '48rem': 3 }"`, no hydration snap
 - 🧩 Auto-imported composables: `useCarousel`, `useYouTubePlayer`, `useInstagramEmbed`, `useTikTokEmbed`, `useEmbedMetadata`
 - 🟦 First-class TypeScript types
 
@@ -132,9 +133,9 @@ Shared by all carousels:
 | ---- | ---- | ------- | ----------- |
 | `options` | `EmblaOptionsType` | `{}` | Embla carousel options |
 | `plugins` | `EmblaPluginType[]` | `[]` | Embla plugins (autoplay, etc.) |
-| `slidesPerView` | `number` | `1` | Slides visible at once |
-| `showArrows` | `boolean` | `true` | Render prev/next arrows |
-| `showDots` | `boolean` | `true` | Render dot pagination |
+| `slidesPerView` | `number \| Record<string, number>` | `1` | Slides visible at once — a number, or a breakpoint map (`{ base: 1, '48rem': 3 }`) rendered as SSR-correct media queries. See [Responsive slide counts](#responsive-slide-counts-ssr-safe) |
+| `showArrows` | `boolean` | `true` | Render prev/next arrows — auto-hidden when there's only one scroll position |
+| `showDots` | `boolean` | `true` | Render dot pagination — hidden when there's only one scroll position |
 | `arrowPosition` | `'sides' \| 'below'` | `'below'` | Arrows flanking the dots (default) or beside the stage |
 | `layout` | `'stacked' \| 'aside'` | `'stacked'` | `'aside'` puts title, description, and nav in a side column next to the carousel (≥768px; stacks below that) |
 | `asidePosition` | `'left' \| 'right'` | `'left'` | Which side the aside column sits on (only applies with `layout="aside"`) |
@@ -190,7 +191,7 @@ accept:
 ```
 
 The default heading markup is styleable without the slot too — see the
-`--carousel-title-*` / `--carousel-description-*` variables under
+`--weburz-carousel-title-*` / `--weburz-carousel-description-*` variables under
 [Theming](#theming).
 
 ## Captions & metadata
@@ -245,68 +246,70 @@ styles:
 
 ```css
 .my-page {
-  --carousel-accent: #00dc82;
-  --carousel-gap: 1rem;             /* stack gap: heading / stage / nav */
-  --carousel-slide-gap: 1rem;       /* gap between slides */
+  --weburz-carousel-accent: #00dc82;
+  --weburz-carousel-gap: 1rem;             /* stack gap: heading / stage / nav */
+  --weburz-carousel-slide-gap: 1rem;       /* gap between slides */
+  /* --weburz-carousel-slides: 3;             slides per view — wins over the slidesPerView
+                                              prop; see Responsive slide counts below */
   /* Arrows are plain chevrons by default — add bg/border to get buttons back */
-  --carousel-arrow-size: 2rem;
-  --carousel-arrow-font-size: 1.5rem;
-  --carousel-arrow-space: 3rem;     /* horizontal room reserved in 'sides' mode */
-  --carousel-arrow-color: #fff;
-  --carousel-arrow-bg: transparent;
-  --carousel-arrow-border: none;
-  --carousel-arrow-radius: 0.25rem;
-  --carousel-dot-size: 0.625rem;
-  --carousel-dot-gap: 0.5rem;
-  --carousel-dot-radius: 50%;
-  --carousel-dot-opacity: 0.3;          /* inactive dots */
-  --carousel-dot-color: #fff;
-  --carousel-dot-active-color: var(--carousel-accent);
-  --carousel-dot-active-scale: 1;       /* e.g. 1.5 for a growing active dot */
+  --weburz-carousel-arrow-size: 2rem;
+  --weburz-carousel-arrow-font-size: 1.5rem;
+  --weburz-carousel-arrow-space: 3rem;     /* horizontal room reserved in 'sides' mode */
+  --weburz-carousel-arrow-color: #fff;
+  --weburz-carousel-arrow-bg: transparent;
+  --weburz-carousel-arrow-border: none;
+  --weburz-carousel-arrow-radius: 0.25rem;
+  --weburz-carousel-dot-size: 0.625rem;
+  --weburz-carousel-dot-gap: 0.5rem;
+  --weburz-carousel-dot-radius: 50%;
+  --weburz-carousel-dot-opacity: 0.3;          /* inactive dots */
+  --weburz-carousel-dot-color: #fff;
+  --weburz-carousel-dot-active-color: var(--weburz-carousel-accent);
+  --weburz-carousel-dot-active-scale: 1;       /* e.g. 1.5 for a growing active dot */
 
-  --carousel-title-size: 1.375rem;
-  --carousel-title-weight: 600;
-  --carousel-title-color: inherit;
-  --carousel-description-size: 0.9375rem;
-  --carousel-description-color: inherit;
-  --carousel-description-opacity: 0.65;
+  --weburz-carousel-title-size: 1.375rem;
+  --weburz-carousel-title-weight: 600;
+  --weburz-carousel-title-color: inherit;
+  --weburz-carousel-description-size: 0.9375rem;
+  --weburz-carousel-description-color: inherit;
+  --weburz-carousel-description-opacity: 0.65;
 
   /* per-slide captions */
-  --carousel-caption-gap: 0.75rem;
-  --carousel-caption-align: center;
-  --carousel-caption-title-size: 1rem;
-  --carousel-caption-title-weight: 600;
-  --carousel-caption-title-color: inherit;
-  --carousel-caption-description-size: 0.875rem;
-  --carousel-caption-description-color: inherit;
-  --carousel-caption-description-opacity: 0.7;
+  --weburz-carousel-caption-gap: 0.75rem;
+  --weburz-carousel-caption-align: center;
+  --weburz-carousel-caption-title-size: 1rem;
+  --weburz-carousel-caption-title-weight: 600;
+  --weburz-carousel-caption-title-color: inherit;
+  --weburz-carousel-caption-description-size: 0.875rem;
+  --weburz-carousel-caption-description-color: inherit;
+  --weburz-carousel-caption-description-opacity: 0.7;
 
   /* layout="aside" (breakpoint is fixed at 768px) */
-  --carousel-aside-column: minmax(12rem, 1fr);  /* heading column sizing */
-  --carousel-aside-stage: 2fr;                  /* carousel column sizing */
-  --carousel-aside-gap: 2.5rem;
+  --weburz-carousel-aside-column: minmax(12rem, 1fr);  /* heading column sizing */
+  --weburz-carousel-aside-stage: 2fr;                  /* carousel column sizing */
+  --weburz-carousel-aside-gap: 2.5rem;
 
   /* media frame — applies to YouTube, Instagram and TikTok embeds alike;
-     override per platform with --yt-border / --instagram-border / --tiktok-border
+     override per platform with --weburz-yt-border / --weburz-instagram-border / --weburz-tiktok-border
      (and the matching -radius / -shadow variants) */
-  --carousel-media-border: none;        /* e.g. 0.25rem solid var(--brand-primary) */
-  --carousel-media-radius: 0.5rem;
-  --carousel-media-shadow: none;        /* e.g. 0 10px 40px rgb(0 0 0 / 0.3) */
-  --carousel-media-margin: 0;           /* set ~the shadow's blur radius so the
+  --weburz-carousel-media-border: none;        /* e.g. 0.25rem solid var(--brand-primary) */
+  --weburz-carousel-media-radius: 0.5rem;
+  --weburz-carousel-media-shadow: none;        /* e.g. 0 10px 40px rgb(0 0 0 / 0.3) */
+  --weburz-carousel-media-margin: 0;           /* set ~the shadow's blur radius so the
                                            viewport's overflow:hidden can't clip it */
 
-  --yt-radius: 0.5rem;
-  --yt-video-aspect: 16 / 9;
-  --yt-shorts-aspect: 9 / 16;
-  --yt-shorts-max-width: 24rem;
+  --weburz-yt-radius: 0.5rem;
+  --weburz-yt-video-aspect: 16 / 9;
+  --weburz-yt-shorts-aspect: 9 / 16;
+  --weburz-yt-shorts-max-width: 24rem;
 
-  --instagram-max-width: 22rem;
-  --instagram-aspect: 9 / 16;
+  --weburz-instagram-max-width: 22rem;
+  --weburz-instagram-aspect: 9 / 16;
 
   /* TikTok's embed card is fixed ~323x757px — these defaults match it.
      Wider → white side gutters; shorter → the music line gets clipped. */
-  --tiktok-max-width: 20.3125rem;
-  --tiktok-min-height: 47.5rem;
+  --weburz-tiktok-max-width: 20.3125rem;
+  --weburz-tiktok-min-height: 47.5rem;
 }
 ```
 
@@ -315,15 +318,56 @@ To integrate with a design system, map them once inside your theme classes —
 
 ```css
 html.dark {
-  --carousel-dot-color: var(--text-primary);
-  --carousel-dot-active-color: var(--brand-primary);
-  --carousel-arrow-color: var(--text-primary);
+  --weburz-carousel-dot-color: var(--text-primary);
+  --weburz-carousel-dot-active-color: var(--brand-primary);
+  --weburz-carousel-arrow-color: var(--text-primary);
 }
 ```
 
 — and every carousel follows theme switches automatically, with no JS theme
 watcher. Arrows and dots default to `currentColor`, so even with zero mapping
 they already match the surrounding text color.
+
+## Responsive slide counts (SSR-safe)
+
+Driving `slidesPerView` from JavaScript viewport detection (`useMediaQuery`
+and friends) has an SSR problem: media queries can't run on the server, so
+the server guesses one count, the browser hydrates to another, and the first
+slide visibly snaps to its real width. (In dev mode the carousel detects this
+pattern and warns about it.)
+
+Pass a breakpoint map instead — keys are `base` plus any `min-width` length,
+and the carousel renders them as real CSS media queries, server-side:
+
+```vue
+<BaseCarousel :slides-per-view="{ 'base': 1, '48rem': 3 }">
+  <BaseSlide v-for="card in cards" :key="card.id">…</BaseSlide>
+</BaseCarousel>
+```
+
+The server output is correct for every viewport with zero JavaScript
+involved, so there is nothing to snap on hydration.
+
+Prefer styling-level control? The same mechanism is exposed as the
+`--weburz-carousel-slides` CSS variable, which always wins over the prop:
+
+```css
+.cards {
+  --weburz-carousel-slides: 1;
+}
+
+@media (min-width: 48rem) {
+  .cards {
+    --weburz-carousel-slides: 3;
+  }
+}
+```
+
+Both work on the platform carousels too — their slides live in the same
+cascade, so a map on `<TikTokCarousel>` behaves identically.
+
+Keep the plain number for counts that are genuinely static
+(`:slides-per-view="2"`).
 
 ## Module options
 
@@ -351,59 +395,82 @@ export default defineNuxtConfig({
 - `useTikTokEmbed()` — `load` / `reload` for TikTok's `embed.js` with the cache-bust trick needed after SPA navigation.
 - `useEmbedMetadata()` — `forYouTube(videoId)` / `forTikTok(url)` fetch `{ title, authorName, thumbnailUrl }` from the platforms' public oEmbed endpoints, cached per URL.
 
-## Contribution
+## Contributing
 
-<details>
-  <summary>Local development</summary>
+Contributions are welcome — bug reports, fixes, new platform quirk
+workarounds, docs. Day-to-day commands are wrapped in a
+[Taskfile](https://taskfile.dev), so you don't have to memorize the pnpm
+script names.
 
-  ```bash
-  pnpm install
-  pnpm run dev:prepare   # generate Nuxt type stubs
-  pnpm run dev           # run the playground
-  pnpm run test
-  pnpm run lint
-  ```
+### Prerequisites
 
-</details>
+- [Node.js](https://nodejs.org/) ≥ 20
+- [pnpm](https://pnpm.io/) 11 (`corepack enable` or `npm i -g pnpm`)
+- [Task](https://taskfile.dev/installation/) (`brew install go-task` /
+  `scoop install task` / see the install docs)
+- [pre-commit](https://pre-commit.com/) — optional but recommended
+  (`brew install pre-commit` or `pipx install pre-commit`)
 
-<details>
-  <summary>Pre-commit hooks</summary>
+### Getting started
 
-  This repo uses [pre-commit](https://pre-commit.com/) to enforce formatting,
-  lint staged files, and validate commit messages (conventional-commits style,
-  required by `changelogen` for the auto-generated [CHANGELOG](./CHANGELOG.md)).
+```bash
+git clone https://github.com/Weburz/carousel.git
+cd carousel
+task setup        # pnpm install + generate Nuxt type stubs
+task setup:hooks  # activate the pre-commit hooks (optional)
+task dev          # run the playground at http://localhost:3000
+```
 
-  Install once per clone:
+The playground (`playground/`) is a real Nuxt app with the module stubbed in —
+edit anything under `src/` and it hot-reloads.
 
-  ```bash
-  # If you don't have pre-commit yet:
-  brew install pre-commit          # macOS / Linuxbrew
-  # or: pipx install pre-commit
-  # or: pip install --user pre-commit
+### Everyday tasks
 
-  # Activate the hooks in this repo:
-  pnpm setup:hooks
-  ```
+Run `task` (no arguments) to see the full list. The ones you'll use most:
 
-  Skip hooks for a single commit with `git commit --no-verify` (use sparingly).
+| Command | What it does |
+| ------- | ------------ |
+| `task setup` | Install dependencies and generate Nuxt type stubs (run once per clone) |
+| `task dev` | Run the playground with hot reload |
+| `task test` | Run the test suite once (`task test:watch` for watch mode) |
+| `task test:types` | Type-check the module and the playground |
+| `task lint` | Lint everything (`task lint:fix` to auto-fix) |
+| `task check` | Everything CI runs: lint, type-check, tests, build |
+| `task build` | Build the distributable module into `dist/` |
+| `task clean` | Remove build artifacts (`task clean:all` also nukes `node_modules`) |
 
-</details>
+Before opening a PR, run `task check` — it mirrors the `Code QA Checks`
+GitHub workflow, so if it passes locally, CI should too.
 
-<details>
-  <summary>Release flow</summary>
+### Project layout
 
-  Local one-liner that lints, tests, builds the module, bumps the version +
-  CHANGELOG via `changelogen`, publishes to npm, and pushes the tag:
+```
+src/module.ts               # Nuxt module entry — registers components & composables
+src/runtime/components/     # BaseCarousel, YouTubeCarousel, InstagramCarousel, TikTokCarousel, …
+src/runtime/composables/    # useCarousel, useYouTubePlayer, useEmbedMetadata, …
+src/runtime/types.ts        # public TypeScript types
+playground/                 # demo Nuxt app for local dev (deployed to GitHub Pages)
+test/                       # Vitest + @nuxt/test-utils suite
+```
 
-  ```bash
-  pnpm release
-  ```
+### Commit messages & hooks
 
-  The `Deploy Playground` workflow publishes `playground/` to GitHub Pages on
-  every push to `main`. Enable Pages in the repository settings and set
-  **Source** to "GitHub Actions" to activate it.
+Commits must follow
+[Conventional Commits](https://www.conventionalcommits.org/) (`feat: …`,
+`fix: …`, `chore: …`) — the CHANGELOG is auto-generated from them by
+`changelogen`. The pre-commit hooks (installed via `task setup:hooks`) lint
+staged files and validate the commit message for you. Skip them for a single
+commit with `git commit --no-verify` (use sparingly).
 
-</details>
+### Releases (maintainers)
+
+```bash
+task release
+```
+
+Lints, tests, builds the module, bumps the version + CHANGELOG via
+`changelogen`, publishes to npm, and pushes the tag. The `Deploy Playground`
+workflow publishes `playground/` to GitHub Pages on every push to `main`.
 
 ## License
 

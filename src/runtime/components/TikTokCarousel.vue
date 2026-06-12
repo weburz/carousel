@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { TikTokVideo } from '../types'
+import type { SlidesPerView, TikTokVideo } from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 
@@ -127,7 +127,7 @@ interface Props {
   fetchMetadata?: boolean
   options?: EmblaOptionsType
   plugins?: EmblaPluginType[]
-  slidesPerView?: number
+  slidesPerView?: SlidesPerView
   showArrows?: boolean
   showDots?: boolean
   arrowPosition?: 'sides' | 'below'
@@ -247,23 +247,23 @@ useScrollAwayHandler(
    wider iframes get white side gutters, shorter ones clip the music line. */
 .weburz-tiktok-embed {
   display: block;
-  margin: var(--carousel-media-margin, 0) auto;
+  margin: var(--weburz-carousel-media-margin, 0) auto;
   width: 100%;
-  max-width: var(--tiktok-max-width, 20.3125rem);
-  min-height: var(--tiktok-min-height, 47.5rem);
-  background: var(--tiktok-bg, transparent);
-  border: var(--tiktok-border, var(--carousel-media-border, none));
-  border-radius: var(--tiktok-radius, var(--carousel-media-radius, 0.5rem));
-  box-shadow: var(--tiktok-shadow, var(--carousel-media-shadow, none));
+  max-width: var(--weburz-tiktok-max-width, 20.3125rem);
+  min-height: var(--weburz-tiktok-min-height, 47.5rem);
+  background: var(--weburz-tiktok-bg, transparent);
+  border: var(--weburz-tiktok-border, var(--weburz-carousel-media-border, none));
+  border-radius: var(--weburz-tiktok-radius, var(--weburz-carousel-media-radius, 0.5rem));
+  box-shadow: var(--weburz-tiktok-shadow, var(--weburz-carousel-media-shadow, none));
 }
 
 .weburz-caption {
-  margin-top: var(--carousel-caption-gap, 0.75rem);
-  text-align: var(--carousel-caption-align, center);
+  margin-top: var(--weburz-carousel-caption-gap, 0.75rem);
+  text-align: var(--weburz-carousel-caption-align, center);
 }
 
 .weburz-active-caption {
-  text-align: var(--carousel-active-caption-align, start);
+  text-align: var(--weburz-carousel-active-caption-align, start);
 }
 
 .weburz-fade-enter-active,
@@ -283,12 +283,12 @@ useScrollAwayHandler(
 
 .weburz-caption__title {
   margin: 0;
-  font-size: var(--carousel-caption-title-size, 1rem);
-  font-weight: var(--carousel-caption-title-weight, 600);
+  font-size: var(--weburz-carousel-caption-title-size, 1rem);
+  font-weight: var(--weburz-carousel-caption-title-weight, 600);
 }
 
 .weburz-caption__title a {
-  color: var(--carousel-caption-title-color, inherit);
+  color: var(--weburz-carousel-caption-title-color, inherit);
   text-decoration: none;
 }
 
@@ -298,8 +298,8 @@ useScrollAwayHandler(
 
 .weburz-caption__description {
   margin: 0.25rem 0 0;
-  font-size: var(--carousel-caption-description-size, 0.875rem);
-  color: var(--carousel-caption-description-color, inherit);
-  opacity: var(--carousel-caption-description-opacity, 0.7);
+  font-size: var(--weburz-carousel-caption-description-size, 0.875rem);
+  color: var(--weburz-carousel-caption-description-color, inherit);
+  opacity: var(--weburz-carousel-caption-description-opacity, 0.7);
 }
 </style>

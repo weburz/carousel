@@ -1,6 +1,6 @@
 {
   "name": "@weburz/carousel",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Carousel components for Nuxt 4 — YouTube, Instagram, TikTok embeds with the platform lifecycle done right. Built on Embla.",
   "keywords": [
     "nuxt",
@@ -69,7 +69,7 @@
     "@nuxt/devtools": "^3.2.4",
     "@nuxt/eslint-config": "^1.15.2",
     "@nuxt/module-builder": "^1.0.2",
-    "@nuxt/schema": "^4.4.5",
+    "@nuxt/schema": "^4.4.8",
     "@nuxt/test-utils": "^4.0.3",
     "@types/node": "^24",
     "changelogen": "^0.6.2",

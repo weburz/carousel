@@ -42,6 +42,36 @@ describe('@weburz/carousel', async () => {
     expect(html).toContain('weburz-carousel--aside')
   })
 
+  it('ships slidesPerView to CSS as a raw number', async () => {
+    const html = await $fetch('/')
+    // The count reaches CSS via a v-bind variable so the slide width math
+    // happens in calc(), where --weburz-carousel-slides (settable from
+    // consumer media queries) can override it SSR-correctly.
+    expect(html).toMatch(/--[\w-]+-slideCount:2/)
+    // A precomputed width in the HTML would mean JS decided the slide size
+    // again — the exact thing that caused the hydration width snap.
+    expect(html).not.toMatch(/-flexBasis:/)
+  })
+
+  it('renders a breakpoint map as server-side media queries', async () => {
+    const html = await $fetch('/')
+    // The map becomes a real <style> tag in the SSR payload — width is
+    // viewport-correct before any JS runs, so nothing snaps on hydration.
+    const style = html.match(
+      /<style[^>]*>([^<]*--weburz-carousel-slides:2[^<]*)<\/style>/,
+    )?.[1]
+    expect(style).toBeTruthy()
+    expect(style).toContain('@media (min-width: 48rem)')
+    expect(style).toContain('--weburz-carousel-slides:4')
+    // Raw-text <style> elements never decode entities, so the selector must
+    // survive SSR text escaping verbatim — no quotes, no &quot;.
+    expect(style).not.toContain('&')
+    // The style is scoped to its carousel instance via a data attribute.
+    const scope = style!.match(/\[data-weburz-slides=([\w-]+)\]/)?.[1]
+    expect(scope).toBeTruthy()
+    expect(html).toContain(`data-weburz-slides="${scope}"`)
+  })
+
   it('renders YouTubeCarousel iframes pointing at youtube-nocookie.com', async () => {
     const html = await $fetch('/')
     expect(html).toContain('youtube-nocookie.com/embed/abc12345678')
