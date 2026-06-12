@@ -184,7 +184,7 @@ Shared by all carousels:
 | `pauseOnLeave` | `boolean` | `true` | Unload the previous slide's iframe on swipe |
 | `onScrollAway` | `'pause' \| 'none'` | `'pause'` | Unload all iframes when the carousel leaves the viewport |
 | `captions` | `'none' \| 'per-slide' \| 'active'` | IG `'per-slide'`, TikTok `'none'` | Per-item text mode. Off for TikTok by default — its embed already shows the caption inside the iframe |
-| `fetchMetadata` | `boolean` | `true` | TikTok only: auto-fetch missing titles/thumbnails from TikTok's oEmbed (runs when captions or facades need it) |
+| `fetchMetadata` | `boolean` | `true` | TikTok only: auto-fetch missing caption titles from TikTok's oEmbed. Facade thumbnails are fetched regardless — they're not optional metadata; without one the facade is a blank box. Per-video `thumbnail` skips the request |
 
 All carousels emit `select` with the new active index.
 

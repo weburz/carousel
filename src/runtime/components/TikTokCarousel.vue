@@ -210,10 +210,12 @@ const thumbUrl = (video: TikTokVideo) =>
   video.thumbnail ?? fetchedThumbs.value[video.url]
 
 onMounted(() => {
-  if (!props.fetchMetadata) return
-  // Facade mode needs thumbnails; captions need titles. One oEmbed request
-  // (shared via the module-level cache) serves both.
-  const needsTitles = props.captions !== 'none'
+  // `fetchMetadata` governs optional caption titles only. Facade thumbnails
+  // are NOT optional metadata — without one the facade is a blank box — so
+  // they're fetched whenever facade mode needs them, regardless of the flag.
+  // (Pass `thumbnail` per video to skip the oEmbed request entirely.)
+  // One oEmbed request (shared via the module-level cache) serves both.
+  const needsTitles = props.fetchMetadata && props.captions !== 'none'
   for (const video of props.videos) {
     const wantsThumb = props.mode === 'facade' && !video.thumbnail
     const wantsTitle = needsTitles && !video.title
