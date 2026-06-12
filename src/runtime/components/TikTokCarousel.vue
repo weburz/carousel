@@ -345,6 +345,14 @@ useScrollAwayHandler(
    TikTok's player until the user taps. */
 .weburz-tiktok-facade {
   position: relative;
+  /* The button's children are absolutely positioned, so unlike the iframe
+     (intrinsic 300px) it has ZERO intrinsic width — in an auto-sized flex or
+     grid track the whole carousel collapses to its nav row's width. Claim the
+     embed card's width explicitly; max-width still lets narrow slides shrink
+     it (this declaration wins over the embed class's width: 100% by source
+     order). */
+  width: var(--weburz-tiktok-max-width, 20.3125rem);
+  max-width: 100%;
   padding: 0;
   cursor: pointer;
   overflow: hidden;
