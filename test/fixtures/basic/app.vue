@@ -66,7 +66,13 @@
 
     <TikTokCarousel
       :videos="ttVideos"
+      mode="iframe-embed"
       aria-label="Test TikTok carousel"
+    />
+
+    <TikTokCarousel
+      :videos="ttVideos"
+      aria-label="Facade TikTok carousel"
     />
   </div>
 </template>

@@ -31,10 +31,16 @@
     </section>
 
     <section class="demo">
-      <h2>YouTubeCarousel — captions: explicit on slide 1, auto-fetched on 2 &amp; 3</h2>
+      <h2>YouTubeCarousel — facade mode (default): thumbnail until tapped</h2>
+      <p class="demo-note">
+        No YouTube player loads until you tap play — slides are plain
+        thumbnails, so the page stays light and the carousel can be hand-swiped
+        on touch screens (touches on a cross-origin iframe never reach the
+        page). Swiping away destroys the player back to its thumbnail.
+        Captions: explicit on slide 1, auto-fetched on 2 &amp; 3.
+      </p>
       <YouTubeCarousel
         :videos="ytVideos"
-        mode="iframe-embed"
         title="Featured videos"
         description="Linked slide titles — omitted ones are fetched from YouTube oEmbed."
       />
@@ -67,10 +73,9 @@
       <h2>YouTubeCarousel — shorts in the aside layout</h2>
       <YouTubeCarousel
         :videos="ytShorts"
-        mode="iframe-embed"
         layout="aside"
         title="Shorts"
-        description="9:16 embeds with the nav cluster on the left for larger frames."
+        description="9:16 facades (portrait thumbnails) with the nav cluster on the left."
       />
     </section>
 
@@ -122,7 +127,7 @@
     </section>
 
     <section class="demo">
-      <h2>Framed media — border, radius &amp; shadow via CSS vars</h2>
+      <h2>Framed media + mode="iframe-embed" — all iframes load upfront</h2>
       <div class="framed">
         <YouTubeCarousel
           :videos="ytVideos"
@@ -134,7 +139,12 @@
     </section>
 
     <section class="demo">
-      <h2>InstagramCarousel</h2>
+      <h2>InstagramCarousel — tap-to-interact overlay</h2>
+      <p class="demo-note">
+        Each embed sits under a transparent layer so drags reach the carousel
+        (Instagram has no keyless thumbnail, so no facade). Tap once to unlock
+        the post for interaction; it locks again when the slide changes.
+      </p>
       <InstagramCarousel
         :posts="igPosts"
         title="From Instagram"
@@ -143,12 +153,12 @@
     </section>
 
     <section class="demo">
-      <h2>TikTokCarousel — aside layout</h2>
+      <h2>TikTokCarousel — facade mode (default), aside layout</h2>
       <TikTokCarousel
         :videos="ttVideos"
         layout="aside"
         title="From TikTok"
-        description="TikTok embeds carry their own captions; playback halts when you scroll away."
+        description="Thumbnails come from TikTok's keyless oEmbed; tap to load the player, swipe away to destroy it."
       />
     </section>
 

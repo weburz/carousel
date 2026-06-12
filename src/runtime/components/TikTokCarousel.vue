@@ -69,7 +69,44 @@
         v-for="(video, index) in videos"
         :key="video.url"
       >
+        <button
+          v-if="mode === 'facade' && !isActivated(index)"
+          type="button"
+          class="weburz-tiktok-embed weburz-tiktok-facade"
+          :aria-label="`Play ${captionTitle(video) ?? `TikTok video ${index + 1}`}`"
+          @click="activate(index)"
+        >
+          <img
+            v-if="thumbUrl(video)"
+            class="weburz-tiktok-facade__thumb"
+            :src="thumbUrl(video)"
+            :alt="captionTitle(video) ?? ''"
+            loading="lazy"
+          >
+          <span
+            class="weburz-tiktok-facade__play"
+            aria-hidden="true"
+          >
+            <svg
+              viewBox="0 0 48 48"
+              width="48"
+              height="48"
+            >
+              <circle
+                class="weburz-tiktok-facade__play-bg"
+                cx="24"
+                cy="24"
+                r="24"
+              />
+              <path
+                d="M33 24 19.5 16.2v15.6"
+                fill="#fff"
+              />
+            </svg>
+          </span>
+        </button>
         <iframe
+          v-else
           :ref="(el: Element | null) => bindIframe(el, index)"
           class="weburz-tiktok-embed"
           :src="buildEmbedUrl(video.url)"
@@ -109,12 +146,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { SlidesPerView, TikTokVideo } from '../types'
+import type { SlidesPerView, TikTokCarouselMode, TikTokVideo } from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 
 interface Props {
   videos: TikTokVideo[]
+  mode?: TikTokCarouselMode
   pauseOnLeave?: boolean
   onScrollAway?: 'pause' | 'none'
   /**
@@ -139,6 +177,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  mode: 'facade',
   pauseOnLeave: true,
   // TikTok's /embed/v2/ iframe does not respond to any documented postMessage
   // protocol from outside the frame. The only way to halt playback is iframe.src
@@ -162,17 +201,26 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { forTikTok } = useEmbedMetadata()
 const fetchedTitles = ref<Record<string, string>>({})
+const fetchedThumbs = ref<Record<string, string>>({})
 
 const captionTitle = (video: TikTokVideo) =>
   video.title ?? fetchedTitles.value[video.url]
 
+const thumbUrl = (video: TikTokVideo) =>
+  video.thumbnail ?? fetchedThumbs.value[video.url]
+
 onMounted(() => {
-  // Fetched titles only surface in captions, so skip the requests when hidden.
-  if (!props.fetchMetadata || props.captions === 'none') return
+  if (!props.fetchMetadata) return
+  // Facade mode needs thumbnails; captions need titles. One oEmbed request
+  // (shared via the module-level cache) serves both.
+  const needsTitles = props.captions !== 'none'
   for (const video of props.videos) {
-    if (video.title) continue
+    const wantsThumb = props.mode === 'facade' && !video.thumbnail
+    const wantsTitle = needsTitles && !video.title
+    if (!wantsThumb && !wantsTitle) continue
     forTikTok(video.url).then((meta) => {
       if (meta?.title) fetchedTitles.value[video.url] = meta.title
+      if (meta?.thumbnailUrl) fetchedThumbs.value[video.url] = meta.thumbnailUrl
     })
   }
 })
@@ -200,6 +248,27 @@ const bindIframe = (el: Element | null, index: number) => {
   boundIframes.add(index)
 }
 
+// Facade activation: the thumbnail button swaps for the live iframe (which
+// autoplays — TikTok's /embed/v2/ starts on load). Deactivating destroys the
+// iframe, hard-stopping playback, and brings the thumbnail back.
+const activatedIndexes = ref(new Set<number>())
+const isActivated = (index: number) => activatedIndexes.value.has(index)
+
+const activate = (index: number) => {
+  const next = new Set(activatedIndexes.value)
+  next.add(index)
+  activatedIndexes.value = next
+}
+
+const deactivate = (index: number) => {
+  if (!activatedIndexes.value.has(index)) return
+  const next = new Set(activatedIndexes.value)
+  next.delete(index)
+  activatedIndexes.value = next
+  iframeEls.delete(index)
+  boundIframes.delete(index)
+}
+
 const unloadIframe = (iframe: HTMLIFrameElement) => {
   if (iframe.src && iframe.src !== 'about:blank') {
     iframe.dataset.savedSrc = iframe.src
@@ -219,6 +288,10 @@ const onSelect = (index: number) => {
   const previousIndex = activeIndex.value
   activeIndex.value = index
   if (!props.pauseOnLeave) return
+  if (props.mode === 'facade') {
+    deactivate(previousIndex)
+    return
+  }
   const previous = iframeEls.get(previousIndex)
   if (previous) unloadIframe(previous)
   const current = iframeEls.get(index)
@@ -229,9 +302,16 @@ useScrollAwayHandler(
   rootEl,
   () => {
     if (props.onScrollAway !== 'pause') return
+    if (props.mode === 'facade') {
+      // Destroy rather than about:blank-park: the facade is the natural
+      // stopped state, and it stays swipeable when the user scrolls back.
+      for (const index of [...activatedIndexes.value]) deactivate(index)
+      return
+    }
     iframeEls.forEach(unloadIframe)
   },
   () => {
+    if (props.mode === 'facade') return
     iframeEls.forEach(restoreIframe)
   },
 )
@@ -255,6 +335,53 @@ useScrollAwayHandler(
   border: var(--weburz-tiktok-border, var(--weburz-carousel-media-border, none));
   border-radius: var(--weburz-tiktok-radius, var(--weburz-carousel-media-radius, 0.5rem));
   box-shadow: var(--weburz-tiktok-shadow, var(--weburz-carousel-media-shadow, none));
+}
+
+/* Facade: shares the embed's box (same class) so swapping in the iframe
+   causes no layout shift. Being a regular element instead of a cross-origin
+   iframe, it keeps touches on the page — Embla drags work — and defers
+   TikTok's player until the user taps. */
+.weburz-tiktok-facade {
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  background: var(--weburz-tiktok-facade-bg, #000);
+}
+
+.weburz-tiktok-facade__thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.weburz-tiktok-facade__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+  width: var(--weburz-tiktok-play-size, 3.5rem);
+  pointer-events: none;
+}
+
+.weburz-tiktok-facade__play svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 0.4));
+}
+
+.weburz-tiktok-facade__play-bg {
+  fill: var(--weburz-tiktok-play-bg, rgb(0 0 0 / 0.7));
+  transition: fill 0.15s ease;
+}
+
+.weburz-tiktok-facade:hover .weburz-tiktok-facade__play-bg,
+.weburz-tiktok-facade:focus-visible .weburz-tiktok-facade__play-bg {
+  fill: var(--weburz-tiktok-play-bg-hover, #fe2c55);
 }
 
 .weburz-caption {

@@ -70,8 +70,42 @@
         :key="video.id"
       >
         <div :class="['weburz-yt', `weburz-yt--${video.kind ?? 'video'}`]">
+          <button
+            v-if="mode === 'facade' && !isActivated(video.id)"
+            type="button"
+            class="weburz-yt__facade"
+            :aria-label="`Play ${captionTitle(video) ?? `YouTube ${video.kind ?? 'video'}`}`"
+            @click="activate(video.id)"
+          >
+            <img
+              class="weburz-yt__thumb"
+              :src="thumbUrl(video)"
+              :alt="captionTitle(video) ?? ''"
+              loading="lazy"
+              @error="onThumbError(video)"
+            >
+            <span
+              class="weburz-yt__play"
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 68 48"
+                width="68"
+                height="48"
+              >
+                <path
+                  class="weburz-yt__play-bg"
+                  d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
+                />
+                <path
+                  d="M45 24 27 14v20"
+                  fill="#fff"
+                />
+              </svg>
+            </span>
+          </button>
           <iframe
-            v-if="mode === 'iframe-embed'"
+            v-else-if="mode === 'iframe-embed' || mode === 'facade'"
             :ref="(el: Element | null) => bindIframe(el, video)"
             :src="buildEmbedUrl(video)"
             :title="captionTitle(video) ?? `YouTube ${video.kind ?? 'video'} ${video.id}`"
@@ -149,7 +183,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  mode: 'iframe-embed',
+  mode: 'facade',
   nocookie: true,
   autoplayOnScroll: false,
   pauseOnLeave: true,
@@ -177,7 +211,50 @@ const buildEmbedUrl = (video: YouTubeVideo) => {
     modestbranding: '1',
     enablejsapi: '1',
   })
+  // A facade iframe only exists because the user tapped play — start
+  // immediately so the facade tap counts as the play gesture.
+  if (props.mode === 'facade') params.set('autoplay', '1')
   return `https://${host}/embed/${video.id}?${params}`
+}
+
+// Facade thumbnails are keyless: i.ytimg.com serves them for every video.
+// Shorts get the portrait variant (oar2) with a fallback to hqdefault,
+// since oar2 isn't generated for older uploads.
+const thumbFallbacks = ref<Record<string, string>>({})
+
+const thumbUrl = (video: YouTubeVideo) =>
+  thumbFallbacks.value[video.id]
+  ?? video.thumbnail
+  ?? (video.kind === 'shorts'
+    ? `https://i.ytimg.com/vi/${video.id}/oar2.jpg`
+    : `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`)
+
+const onThumbError = (video: YouTubeVideo) => {
+  const fallback = `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
+  if (thumbUrl(video) !== fallback) {
+    thumbFallbacks.value[video.id] = fallback
+  }
+}
+
+// Activated facade slides have swapped their thumbnail for a live iframe.
+// Deactivating destroys the iframe (hard-stops playback) and brings the
+// facade back.
+const activatedIds = ref(new Set<string>())
+const isActivated = (id: string) => activatedIds.value.has(id)
+
+const activate = (id: string) => {
+  const next = new Set(activatedIds.value)
+  next.add(id)
+  activatedIds.value = next
+}
+
+const deactivate = (id: string) => {
+  if (!activatedIds.value.has(id)) return
+  const next = new Set(activatedIds.value)
+  next.delete(id)
+  activatedIds.value = next
+  iframeEls.delete(id)
+  registeredIframes.delete(id)
 }
 
 const { forYouTube } = useEmbedMetadata()
@@ -260,7 +337,7 @@ const muteIframe = (iframe: HTMLIFrameElement) => postIframeCommand(iframe, 'mut
 const unmuteIframe = (iframe: HTMLIFrameElement) => postIframeCommand(iframe, 'unMute')
 
 const playByVideo = (video: YouTubeVideo) => {
-  if (props.mode === 'iframe-embed') {
+  if (props.mode !== 'player-api') {
     const iframe = iframeEls.get(video.id)
     if (iframe) playIframe(iframe)
     return
@@ -270,7 +347,7 @@ const playByVideo = (video: YouTubeVideo) => {
 }
 
 const pauseByVideo = (video: YouTubeVideo) => {
-  if (props.mode === 'iframe-embed') {
+  if (props.mode !== 'player-api') {
     const iframe = iframeEls.get(video.id)
     if (iframe) pauseIframe(iframe)
     return
@@ -280,7 +357,7 @@ const pauseByVideo = (video: YouTubeVideo) => {
 }
 
 const muteByVideo = (video: YouTubeVideo) => {
-  if (props.mode === 'iframe-embed') {
+  if (props.mode !== 'player-api') {
     const iframe = iframeEls.get(video.id)
     if (iframe) muteIframe(iframe)
     return
@@ -290,7 +367,7 @@ const muteByVideo = (video: YouTubeVideo) => {
 }
 
 const unmuteByVideo = (video: YouTubeVideo) => {
-  if (props.mode === 'iframe-embed') {
+  if (props.mode !== 'player-api') {
     const iframe = iframeEls.get(video.id)
     if (iframe) unmuteIframe(iframe)
     return
@@ -304,7 +381,11 @@ const onSelect = (index: number) => {
   activeIndex.value = index
   if (!props.pauseOnLeave) return
   const previousVideo = props.videos[previousIndex]
-  if (previousVideo) pauseByVideo(previousVideo)
+  if (!previousVideo) return
+  // Facade slides revert to the thumbnail on leave: destroying the iframe is
+  // the only hard stop, and the facade is the natural "stopped" state.
+  if (props.mode === 'facade') deactivate(previousVideo.id)
+  else pauseByVideo(previousVideo)
 }
 
 let mutedByObserver = false
@@ -368,6 +449,55 @@ useScrollAwayHandler(
   height: 100%;
   border: 0;
   display: block;
+}
+
+/* Facade: a plain thumbnail button until tapped. Being a regular element (not
+   a cross-origin iframe), it keeps touch events on the page — so Embla drags
+   work — and defers the heavy YouTube player until the user asks for it. */
+.weburz-yt__facade {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: #000;
+  cursor: pointer;
+}
+
+.weburz-yt__thumb {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.weburz-yt__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+  width: var(--weburz-yt-play-size, 4.25rem);
+  height: auto;
+  pointer-events: none;
+}
+
+.weburz-yt__play svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 0.4));
+}
+
+.weburz-yt__play-bg {
+  fill: var(--weburz-yt-play-bg, rgb(0 0 0 / 0.7));
+  transition: fill 0.15s ease;
+}
+
+.weburz-yt__facade:hover .weburz-yt__play-bg,
+.weburz-yt__facade:focus-visible .weburz-yt__play-bg {
+  fill: var(--weburz-yt-play-bg-hover, #f03);
 }
 
 .weburz-caption {

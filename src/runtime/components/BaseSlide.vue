@@ -24,18 +24,12 @@ const slideCount = computed(() => String(slidesPerView.value))
 .weburz-carousel__slide {
   flex-grow: 0;
   flex-shrink: 0;
-  /* Slides EXACTLY fill the viewport with the configured gap between them.
-     For N slides per view with gap G:
-       N * basis + (N - 1) * G = 100%
-       basis = (100% - (N - 1) * G) / N
-     For N = 1 the formula reduces to 100%. */
-  flex-basis: calc(
-    (
-        100% - (var(--weburz-carousel-slides, v-bind(slideCount)) - 1) *
-          var(--weburz-carousel-slide-gap, 1rem)
-      ) /
-      var(--weburz-carousel-slides, v-bind(slideCount))
-  );
+  /* The gap is padding INSIDE the slide (loop-safe — see the container rule
+     in BaseCarousel) and the container is widened by one gap via its negative
+     margin, so N slides exactly fill the viewport at a plain 100% / N. */
+  flex-basis: calc(100% / var(--weburz-carousel-slides, v-bind(slideCount)));
+  box-sizing: border-box;
+  padding-inline-start: var(--weburz-carousel-slide-gap, 1rem);
   min-width: 0;
 }
 </style>

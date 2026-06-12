@@ -76,14 +76,23 @@ every Vue file.
       { id: 'dQw4w9WgXcQ', kind: 'video', title: 'Never Gonna Give You Up' },
       { id: '9bZkp7q19f0', kind: 'shorts', title: 'A short' },
     ]"
-    mode="player-api"
-    :autoplay-on-scroll="true"
     aria-label="Featured videos"
   />
 </template>
 ```
 
 (Yes, that first id is exactly what you think it is. Copy-paste responsibly.)
+
+The default `mode="facade"` renders each slide as the video's thumbnail with a
+play button; the actual YouTube iframe (a ~1 MB player) is only created when
+the user taps play, with `autoplay=1` so the tap counts as the play gesture.
+Besides the obvious page-weight win, this is what keeps the carousel
+**hand-swipeable on touch screens**: touches that start on a cross-origin
+iframe are delivered to the embed's document and never reach the page, so a
+carousel of always-on iframes can't be dragged at all. Swiping away from a
+playing slide destroys the iframe back to its facade. Prefer everything loaded
+upfront? `mode="iframe-embed"`. Need programmatic control
+(`autoplay-on-scroll`)? `mode="player-api"`.
 
 ### InstagramCarousel / TikTokCarousel
 
@@ -101,10 +110,19 @@ every Vue file.
 </template>
 ```
 
-Instagram and TikTok expose no playback control API from outside the iframe, so
-"pause" is implemented by unloading the iframe (`src → about:blank`) and
-restoring it on return — the embed reloads, but audio never keeps playing
-off-screen. Opt out with `:pause-on-leave="false"` / `on-scroll-away="none"`.
+TikTok defaults to `mode="facade"` like YouTube: the thumbnail comes from
+TikTok's keyless oEmbed endpoint, and the player iframe (which autoplays on
+load) is only created when the user taps. Instagram has no keyless thumbnail
+source, so it keeps its iframes but covers each with a **tap-to-interact
+overlay** (`tapToInteract`, on by default): drags land on the page — so the
+carousel stays hand-swipeable — and a tap unlocks the post for real
+interaction until the slide changes.
+
+Instagram (and TikTok in `iframe-embed` mode) expose no playback control API
+from outside the iframe, so "pause" is implemented by unloading the iframe
+(`src → about:blank`) and restoring it on return — the embed reloads, but
+audio never keeps playing off-screen. Opt out with `:pause-on-leave="false"` /
+`on-scroll-away="none"`.
 
 ### The hero treatment
 
@@ -147,8 +165,8 @@ Shared by all carousels:
 
 | Prop | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
-| `videos` | `YouTubeVideo[]` | — | `{ id, kind?: 'video' \| 'shorts', title?, description?, url? }` |
-| `mode` | `'iframe-embed' \| 'player-api'` | `'iframe-embed'` | Plain iframes vs the YouTube IFrame Player API |
+| `videos` | `YouTubeVideo[]` | — | `{ id, kind?: 'video' \| 'shorts', title?, description?, url?, thumbnail? }` |
+| `mode` | `'facade' \| 'iframe-embed' \| 'player-api'` | `'facade'` | Thumbnail-until-tapped (light + touch-swipeable), all iframes upfront, or the YouTube IFrame Player API |
 | `nocookie` | `boolean` | `true` | Use `youtube-nocookie.com` |
 | `autoplayOnScroll` | `boolean` | `false` | Play active video when scrolled into view (`player-api` only) |
 | `pauseOnLeave` | `boolean` | `true` | Pause the previous slide on swipe |
@@ -160,11 +178,13 @@ Shared by all carousels:
 
 | Prop | Type | Default | Description |
 | ---- | ---- | ------- | ----------- |
-| `posts` / `videos` | `InstagramPost[]` / `TikTokVideo[]` | — | `{ url, title?, description? }` |
+| `posts` / `videos` | `InstagramPost[]` / `TikTokVideo[]` | — | `{ url, title?, description? }` (TikTok also takes `thumbnail?`) |
+| `mode` | `'facade' \| 'iframe-embed'` | `'facade'` | TikTok only: thumbnail-until-tapped vs all iframes upfront |
+| `tapToInteract` | `boolean` | `true` | Instagram only: transparent layer over each embed so drags reach the carousel; tap to unlock the post |
 | `pauseOnLeave` | `boolean` | `true` | Unload the previous slide's iframe on swipe |
 | `onScrollAway` | `'pause' \| 'none'` | `'pause'` | Unload all iframes when the carousel leaves the viewport |
 | `captions` | `'none' \| 'per-slide' \| 'active'` | IG `'per-slide'`, TikTok `'none'` | Per-item text mode. Off for TikTok by default — its embed already shows the caption inside the iframe |
-| `fetchMetadata` | `boolean` | `true` | TikTok only: auto-fetch missing titles from TikTok's oEmbed (only runs when captions are shown) |
+| `fetchMetadata` | `boolean` | `true` | TikTok only: auto-fetch missing titles/thumbnails from TikTok's oEmbed (runs when captions or facades need it) |
 
 All carousels emit `select` with the new active index.
 
@@ -303,6 +323,11 @@ styles:
   --weburz-yt-shorts-aspect: 9 / 16;
   --weburz-yt-shorts-max-width: 24rem;
 
+  /* facade play button (facade mode) */
+  --weburz-yt-play-size: 4.25rem;
+  --weburz-yt-play-bg: rgb(0 0 0 / 0.7);
+  --weburz-yt-play-bg-hover: #f03;
+
   --weburz-instagram-max-width: 22rem;
   --weburz-instagram-aspect: 9 / 16;
 
@@ -310,6 +335,12 @@ styles:
      Wider → white side gutters; shorter → the music line gets clipped. */
   --weburz-tiktok-max-width: 20.3125rem;
   --weburz-tiktok-min-height: 47.5rem;
+
+  /* facade play button (facade mode) */
+  --weburz-tiktok-facade-bg: #000;
+  --weburz-tiktok-play-size: 3.5rem;
+  --weburz-tiktok-play-bg: rgb(0 0 0 / 0.7);
+  --weburz-tiktok-play-bg-hover: #fe2c55;
 }
 ```
 

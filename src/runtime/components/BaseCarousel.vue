@@ -315,7 +315,13 @@ const showArrowControls = computed(
 
 .weburz-carousel__container {
   display: flex;
-  gap: var(--weburz-carousel-slide-gap, 1rem);
+  /* Slide spacing is padding-left on each slide, NOT flex gap: Embla's
+     loop:true repositions slides with per-slide transforms, and a container
+     gap doesn't travel with the transform — the wrapped slide lands flush
+     against its neighbor at the loop seam. Padding lives inside the
+     translated element, so it loops correctly. The negative margin hides
+     the first slide's padding so edges still align with the viewport. */
+  margin-inline-start: calc(var(--weburz-carousel-slide-gap, 1rem) * -1);
 }
 
 .weburz-carousel__nav {

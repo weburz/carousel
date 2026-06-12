@@ -107,6 +107,36 @@ describe('@weburz/carousel', async () => {
     expect(html).toContain('Test video description')
   })
 
+  it('renders YouTube facades (default mode) as thumbnail buttons', async () => {
+    const html = await $fetch('/')
+    expect(html).toContain('weburz-yt__facade')
+    // Keyless thumbnail host; videos get hqdefault, shorts the portrait oar2.
+    expect(html).toContain('i.ytimg.com/vi/abc12345678/hqdefault.jpg')
+    expect(html).toContain('i.ytimg.com/vi/def98765432/oar2.jpg')
+    expect(html).toContain('aria-label="Play Test video"')
+  })
+
+  it('puts autoplay only on facade embed URLs', async () => {
+    const html = await $fetch('/')
+    // The iframe-embed instance loads upfront — autoplaying it would be
+    // hostile. Facade iframes only exist after a play tap (client-side),
+    // so no SSR URL should carry autoplay.
+    expect(html).not.toContain('autoplay=1')
+  })
+
+  it('covers Instagram embeds with the tap-to-interact overlay', async () => {
+    const html = await $fetch('/')
+    expect(html).toContain('weburz-instagram-media')
+    expect(html).toContain('weburz-instagram-overlay')
+    expect(html).toContain('aria-label="Interact with Test IG post"')
+  })
+
+  it('renders TikTok facade (default mode) as a thumbnail button', async () => {
+    const html = await $fetch('/')
+    expect(html).toContain('weburz-tiktok-facade')
+    expect(html).toContain('aria-label="Play Test TikTok"')
+  })
+
   it('renders Instagram iframe pointing at /embed/captioned/', async () => {
     const html = await $fetch('/')
     expect(html).toContain('class="weburz-instagram-embed"')

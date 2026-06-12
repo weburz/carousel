@@ -7,9 +7,25 @@ export interface YouTubeVideo {
   description?: string
   /** Caption link target. Defaults to the watch/shorts URL derived from `id`. */
   url?: string
+  /**
+   * Facade thumbnail override. Defaults to the keyless i.ytimg.com thumbnail
+   * (`hqdefault.jpg`, or the portrait `oar2.jpg` for shorts).
+   */
+  thumbnail?: string
 }
 
-export type YouTubeCarouselMode = 'iframe-embed' | 'player-api'
+/**
+ * 'facade' (default) renders the video thumbnail with a play button and only
+ * creates the YouTube iframe when tapped — pages load light, and slides stay
+ * hand-swipeable on touch devices (touches that start on a cross-origin
+ * iframe never reach the page, so an always-on iframe kills Embla dragging).
+ * 'iframe-embed' renders all iframes upfront; 'player-api' uses the IFrame
+ * Player API for programmatic control (autoplay-on-scroll).
+ */
+export type YouTubeCarouselMode = 'facade' | 'iframe-embed' | 'player-api'
+
+/** TikTok: 'facade' (default) mirrors the YouTube facade behavior. */
+export type TikTokCarouselMode = 'facade' | 'iframe-embed'
 
 export interface InstagramPost {
   url: string
@@ -28,6 +44,11 @@ export interface TikTokVideo {
   title?: string
   /** Caption text shown under the title. */
   description?: string
+  /**
+   * Facade thumbnail override. Omit to auto-fetch it from TikTok's keyless
+   * oEmbed endpoint.
+   */
+  thumbnail?: string
 }
 
 /**

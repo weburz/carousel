@@ -69,17 +69,26 @@
         v-for="(post, index) in posts"
         :key="post.url"
       >
-        <iframe
-          :ref="(el: Element | null) => bindIframe(el, index)"
-          class="weburz-instagram-embed"
-          :src="buildEmbedUrl(post.url)"
-          :title="post.title ?? `Instagram post ${index + 1}`"
-          loading="lazy"
-          frameborder="0"
-          scrolling="no"
-          allowtransparency="true"
-          allow="encrypted-media"
-        />
+        <div class="weburz-instagram-media">
+          <iframe
+            :ref="(el: Element | null) => bindIframe(el, index)"
+            class="weburz-instagram-embed"
+            :src="buildEmbedUrl(post.url)"
+            :title="post.title ?? `Instagram post ${index + 1}`"
+            loading="lazy"
+            frameborder="0"
+            scrolling="no"
+            allowtransparency="true"
+            allow="encrypted-media"
+          />
+          <button
+            v-if="tapToInteract && unlockedIndex !== index"
+            type="button"
+            class="weburz-instagram-overlay"
+            :aria-label="`Interact with ${post.title ?? `Instagram post ${index + 1}`}`"
+            @click="unlock(index)"
+          />
+        </div>
         <div
           v-if="captions === 'per-slide' && (post.title || post.description)"
           class="weburz-caption"
@@ -117,6 +126,14 @@ interface Props {
   pauseOnLeave?: boolean
   onScrollAway?: 'pause' | 'none'
   /**
+   * Cover each embed with a transparent layer so touch-drags reach the
+   * carousel instead of dying inside Instagram's cross-origin iframe (touches
+   * that start on an iframe never reach the page — without this, the carousel
+   * cannot be hand-swiped on mobile). Tapping the layer unlocks the post for
+   * interaction; it locks again when the active slide changes.
+   */
+  tapToInteract?: boolean
+  /**
    * Per-item text display: under every slide ('per-slide'), one heading-area
    * block showing the active slide's title/description ('active'), or none.
    * Text comes from `posts[].title` / `posts[].description` only — Instagram
@@ -143,6 +160,7 @@ const props = withDefaults(defineProps<Props>(), {
   // scrolls back into view. Default to "pause" because "audio keeps playing
   // while user scrolls elsewhere" is a worse UX than "video restarts on return".
   onScrollAway: 'pause',
+  tapToInteract: true,
   captions: 'per-slide',
   options: () => ({}),
   plugins: () => [],
@@ -207,9 +225,17 @@ const restoreIframe = (iframe: HTMLIFrameElement) => {
   }
 }
 
+// Embla cancels the click that follows a drag, so dragging across the overlay
+// never accidentally unlocks a post.
+const unlockedIndex = ref<number | null>(null)
+const unlock = (index: number) => {
+  unlockedIndex.value = index
+}
+
 const onSelect = (index: number) => {
   const previousIndex = activeIndex.value
   activeIndex.value = index
+  unlockedIndex.value = null
   if (!props.pauseOnLeave) return
   const previous = iframeEls.get(previousIndex)
   if (previous) unloadIframe(previous)
@@ -234,16 +260,41 @@ useScrollAwayHandler(
   width: 100%;
 }
 
-.weburz-instagram-embed {
-  display: block;
+/* The wrapper owns the box so the tap-to-interact overlay can cover the
+   iframe exactly. */
+.weburz-instagram-media {
+  position: relative;
   margin: var(--weburz-carousel-media-margin, 0) auto;
   width: 100%;
   max-width: var(--weburz-instagram-max-width, 22rem);
   aspect-ratio: var(--weburz-instagram-aspect, 9 / 16);
+}
+
+.weburz-instagram-embed {
+  display: block;
+  width: 100%;
+  height: 100%;
   background: var(--weburz-instagram-bg, #fff);
   border: var(--weburz-instagram-border, var(--weburz-carousel-media-border, none));
   border-radius: var(--weburz-instagram-radius, var(--weburz-carousel-media-radius, 0.5rem));
   box-shadow: var(--weburz-instagram-shadow, var(--weburz-carousel-media-shadow, none));
+}
+
+/* Invisible by design: it exists to receive the touch so Embla can drag.
+   A tap (no drag) hands the post over for real interaction. */
+.weburz-instagram-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: var(--weburz-instagram-radius, var(--weburz-carousel-media-radius, 0.5rem));
+  cursor: pointer;
+}
+
+.weburz-instagram-overlay:focus-visible {
+  outline: 2px solid var(--weburz-carousel-accent, currentColor);
+  outline-offset: 2px;
 }
 
 .weburz-caption {
