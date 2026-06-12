@@ -48,7 +48,7 @@ const loadYouTubeAPI = (): Promise<void> => {
   if (scriptPromise) {
     return scriptPromise
   }
-  scriptPromise = new Promise<void>((resolve) => {
+  scriptPromise = new Promise<void>((resolve, reject) => {
     const previous = window.onYouTubeIframeAPIReady
     window.onYouTubeIframeAPIReady = () => {
       previous?.()
@@ -57,6 +57,13 @@ const loadYouTubeAPI = (): Promise<void> => {
     const script = document.createElement('script')
     script.src = 'https://www.youtube.com/iframe_api'
     script.async = true
+    // Without this the promise hangs forever when the script can't load
+    // (offline, ad blocker) — reset the cache so a later call can retry.
+    script.onerror = () => {
+      scriptPromise = null
+      script.remove()
+      reject(new Error('Failed to load the YouTube iframe API script'))
+    }
     document.head.appendChild(script)
   })
   return scriptPromise

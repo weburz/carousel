@@ -42,10 +42,12 @@ jobs:
         run: pnpm dev:prepare
 
       - name: Generate static site
+        env:
+          NUXT_PUBLIC_UMAMI_WEBSITE_ID: ${{ vars.NUXT_PUBLIC_UMAMI_WEBSITE_ID }}
         run: pnpm exec nuxi generate playground
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: playground/.output/public
 
@@ -60,4 +62,4 @@ jobs:
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

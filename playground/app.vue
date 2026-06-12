@@ -3,6 +3,34 @@
     <h1>@weburz/carousel playground</h1>
 
     <section class="demo">
+      <h2>Responsive slide count — the --weburz-carousel-slides CSS var (SSR-safe)</h2>
+      <p class="demo-note">
+        The slide count lives in CSS media queries (1 below 48rem, 3 above),
+        so the server-rendered HTML is already viewport-correct — no hydration
+        width snap, unlike a slidesPerView prop driven by JS viewport
+        detection. The var wins over the prop, which stays as the static
+        fallback.
+      </p>
+      <BaseCarousel
+        class="responsive-slides"
+        :options="{ align: 'start' }"
+        aria-label="CSS-var responsive carousel"
+      >
+        <BaseSlide
+          v-for="slide in slides"
+          :key="slide.id"
+        >
+          <div
+            class="slide-card slide-card--tall"
+            :style="{ background: slide.color }"
+          >
+            {{ slide.label }}
+          </div>
+        </BaseSlide>
+      </BaseCarousel>
+    </section>
+
+    <section class="demo">
       <h2>YouTubeCarousel — captions: explicit on slide 1, auto-fetched on 2 &amp; 3</h2>
       <YouTubeCarousel
         :videos="ytVideos"
@@ -269,6 +297,25 @@
     </section>
 
     <section class="demo">
+      <h2>Single slide — arrows and dots auto-hide</h2>
+      <p class="demo-note">
+        One slide means one scroll position: dots never render, and the arrows
+        are dropped once Embla confirms the count. (SSR keeps arrows while the
+        count is unknown so multi-slide carousels don't get a nav pop-in.)
+      </p>
+      <BaseCarousel aria-label="Single slide carousel">
+        <BaseSlide>
+          <div
+            class="slide-card slide-card--short"
+            style="background: #555"
+          >
+            The only slide — no chrome below
+          </div>
+        </BaseSlide>
+      </BaseCarousel>
+    </section>
+
+    <section class="demo">
       <h2>Dots only / arrows only</h2>
       <div class="demo-grid">
         <BaseCarousel
@@ -407,9 +454,9 @@ body,
   margin: 0 auto;
 
   /* Theme the carousel via CSS variables */
-  --carousel-accent: #00dc82;
-  --carousel-dot-color: #fff;
-  --carousel-dot-active-color: #00dc82;
+  --weburz-carousel-accent: #00dc82;
+  --weburz-carousel-dot-color: #fff;
+  --weburz-carousel-dot-active-color: #00dc82;
 }
 
 .demo {
@@ -451,6 +498,22 @@ body,
   font-weight: 600;
 }
 
+.slide-card--tall {
+  height: 320px;
+}
+
+/* SSR-correct responsive slide count: plain CSS, so the server output already
+   matches the viewport — no hydration snap. */
+.responsive-slides {
+  --weburz-carousel-slides: 1;
+}
+
+@media (min-width: 48rem) {
+  .responsive-slides {
+    --weburz-carousel-slides: 3;
+  }
+}
+
 .slide-card--short {
   height: 120px;
   font-size: 1rem;
@@ -464,10 +527,10 @@ body,
   border-radius: 1rem;
   transition: background 0.3s ease, color 0.3s ease;
 
-  --carousel-dot-size: 0.7rem;
-  --carousel-dot-opacity: 1;
-  --carousel-dot-active-scale: 1.5;
-  --carousel-dot-gap: 1rem;
+  --weburz-carousel-dot-size: 0.7rem;
+  --weburz-carousel-dot-opacity: 1;
+  --weburz-carousel-dot-active-scale: 1.5;
+  --weburz-carousel-dot-gap: 1rem;
 }
 
 .themed--light {
@@ -476,9 +539,9 @@ body,
   background: linear-gradient(90deg, #ffbff1 0%, #fff4fd 65%);
   color: #1e1b2e;
 
-  --carousel-dot-color: var(--primary);
-  --carousel-dot-active-color: var(--accent);
-  --carousel-arrow-color: var(--primary);
+  --weburz-carousel-dot-color: var(--primary);
+  --weburz-carousel-dot-active-color: var(--accent);
+  --weburz-carousel-arrow-color: var(--primary);
 }
 
 .themed--dark {
@@ -486,9 +549,9 @@ body,
   background: #1e1b2e;
   color: #f1f1f1;
 
-  --carousel-dot-color: #f1f1f1;
-  --carousel-dot-active-color: var(--primary);
-  --carousel-arrow-color: #f1f1f1;
+  --weburz-carousel-dot-color: #f1f1f1;
+  --weburz-carousel-dot-active-color: var(--primary);
+  --weburz-carousel-arrow-color: #f1f1f1;
 }
 
 .themed--neutral {
@@ -496,20 +559,20 @@ body,
   background: #f1f1f1;
   color: #1e1b2e;
 
-  --carousel-dot-color: #1e1b2e;
-  --carousel-dot-active-color: var(--accent);
-  --carousel-arrow-color: rgba(85, 50, 133, 1);
+  --weburz-carousel-dot-color: #1e1b2e;
+  --weburz-carousel-dot-active-color: var(--accent);
+  --weburz-carousel-arrow-color: rgba(85, 50, 133, 1);
 }
 
 /* Framed media: one set of vars covers YouTube, Instagram and TikTok embeds.
-   Use --yt-border / --instagram-border / --tiktok-border for per-platform
+   Use --weburz-yt-border / --weburz-instagram-border / --weburz-tiktok-border for per-platform
    overrides. The media margin gives the shadow room inside the slide so the
    carousel viewport's overflow:hidden doesn't clip it. */
 .framed {
-  --carousel-media-border: 0.25rem solid #00dc82;
-  --carousel-media-radius: 1.25rem;
-  --carousel-media-shadow: 0 0 30px rgba(0, 220, 130, 0.35);
-  --carousel-media-margin: 2.5rem;
+  --weburz-carousel-media-border: 0.25rem solid #00dc82;
+  --weburz-carousel-media-radius: 1.25rem;
+  --weburz-carousel-media-shadow: 0 0 30px rgba(0, 220, 130, 0.35);
+  --weburz-carousel-media-margin: 2.5rem;
 }
 
 .custom-heading__eyebrow {

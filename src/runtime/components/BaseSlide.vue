@@ -12,23 +12,30 @@ const slidesPerView = inject<Ref<number>>(
   ref(1),
 )
 
-// Compute basis so the slides EXACTLY fill the viewport with the configured gap
-// between them. For N slides per view with gap G:
-//   N * basis + (N - 1) * G = 100%
-//   basis = (100% - (N - 1) * G) / N
-// For N = 1 the formula reduces to 100% (no gaps in view), so short-circuit it.
-const flexBasis = computed(() => {
-  const n = slidesPerView.value
-  if (n <= 1) return '100%'
-  return `calc((100% - ${n - 1} * var(--carousel-slide-gap, 1rem)) / ${n})`
-})
+// Exposed to CSS as a plain number so all sizing math happens in calc() —
+// that lets `--weburz-carousel-slides` (settable from consumer CSS, media
+// queries included) take precedence over the prop. Sizing decided in CSS is
+// SSR-correct: a JS-driven slidesPerView (e.g. from useMediaQuery) can't be
+// known on the server and causes a visible width snap on hydration.
+const slideCount = computed(() => String(slidesPerView.value))
 </script>
 
 <style scoped>
 .weburz-carousel__slide {
   flex-grow: 0;
   flex-shrink: 0;
-  flex-basis: v-bind(flexBasis);
+  /* Slides EXACTLY fill the viewport with the configured gap between them.
+     For N slides per view with gap G:
+       N * basis + (N - 1) * G = 100%
+       basis = (100% - (N - 1) * G) / N
+     For N = 1 the formula reduces to 100%. */
+  flex-basis: calc(
+    (
+        100% - (var(--weburz-carousel-slides, v-bind(slideCount)) - 1) *
+          var(--weburz-carousel-slide-gap, 1rem)
+      ) /
+      var(--weburz-carousel-slides, v-bind(slideCount))
+  );
   min-width: 0;
 }
 </style>

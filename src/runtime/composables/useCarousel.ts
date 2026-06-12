@@ -1,10 +1,13 @@
 import emblaCarouselVue from 'embla-carousel-vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import { ref, watch } from 'vue'
+import { ref, watch, type MaybeRef } from 'vue'
 
 export const useCarousel = (
-  options?: EmblaOptionsType,
-  plugins?: EmblaPluginType[],
+  // Refs pass straight through to embla-carousel-vue, which watches them and
+  // re-initializes on change — so option/plugin props stay live, not
+  // captured once at setup.
+  options?: MaybeRef<EmblaOptionsType>,
+  plugins?: MaybeRef<EmblaPluginType[]>,
 ) => {
   const [carouselRef, emblaApi] = emblaCarouselVue(options, plugins)
 
