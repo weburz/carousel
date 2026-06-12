@@ -3,6 +3,34 @@
     <h1>@weburz/carousel playground</h1>
 
     <section class="demo">
+      <h2>Responsive slide count — the --weburz-carousel-slides CSS var (SSR-safe)</h2>
+      <p class="demo-note">
+        The slide count lives in CSS media queries (1 below 48rem, 3 above),
+        so the server-rendered HTML is already viewport-correct — no hydration
+        width snap, unlike a slidesPerView prop driven by JS viewport
+        detection. The var wins over the prop, which stays as the static
+        fallback.
+      </p>
+      <BaseCarousel
+        class="responsive-slides"
+        :options="{ align: 'start' }"
+        aria-label="CSS-var responsive carousel"
+      >
+        <BaseSlide
+          v-for="slide in slides"
+          :key="slide.id"
+        >
+          <div
+            class="slide-card slide-card--tall"
+            :style="{ background: slide.color }"
+          >
+            {{ slide.label }}
+          </div>
+        </BaseSlide>
+      </BaseCarousel>
+    </section>
+
+    <section class="demo">
       <h2>YouTubeCarousel — captions: explicit on slide 1, auto-fetched on 2 &amp; 3</h2>
       <YouTubeCarousel
         :videos="ytVideos"
@@ -269,6 +297,25 @@
     </section>
 
     <section class="demo">
+      <h2>Single slide — arrows and dots auto-hide</h2>
+      <p class="demo-note">
+        One slide means one scroll position: dots never render, and the arrows
+        are dropped once Embla confirms the count. (SSR keeps arrows while the
+        count is unknown so multi-slide carousels don't get a nav pop-in.)
+      </p>
+      <BaseCarousel aria-label="Single slide carousel">
+        <BaseSlide>
+          <div
+            class="slide-card slide-card--short"
+            style="background: #555"
+          >
+            The only slide — no chrome below
+          </div>
+        </BaseSlide>
+      </BaseCarousel>
+    </section>
+
+    <section class="demo">
       <h2>Dots only / arrows only</h2>
       <div class="demo-grid">
         <BaseCarousel
@@ -449,6 +496,22 @@ body,
   border-radius: 0.75rem;
   font-size: 1.5rem;
   font-weight: 600;
+}
+
+.slide-card--tall {
+  height: 320px;
+}
+
+/* SSR-correct responsive slide count: plain CSS, so the server output already
+   matches the viewport — no hydration snap. */
+.responsive-slides {
+  --weburz-carousel-slides: 1;
+}
+
+@media (min-width: 48rem) {
+  .responsive-slides {
+    --weburz-carousel-slides: 3;
+  }
 }
 
 .slide-card--short {

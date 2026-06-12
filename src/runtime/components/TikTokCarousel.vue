@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { TikTokVideo } from '../types'
+import type { SlidesPerView, TikTokVideo } from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 
@@ -127,7 +127,7 @@ interface Props {
   fetchMetadata?: boolean
   options?: EmblaOptionsType
   plugins?: EmblaPluginType[]
-  slidesPerView?: number
+  slidesPerView?: SlidesPerView
   showArrows?: boolean
   showDots?: boolean
   arrowPosition?: 'sides' | 'below'

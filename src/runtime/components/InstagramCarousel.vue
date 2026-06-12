@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { InstagramPost } from '../types'
+import type { InstagramPost, SlidesPerView } from '../types'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 
 interface Props {
@@ -125,7 +125,7 @@ interface Props {
   captions?: 'none' | 'per-slide' | 'active'
   options?: EmblaOptionsType
   plugins?: EmblaPluginType[]
-  slidesPerView?: number
+  slidesPerView?: SlidesPerView
   showArrows?: boolean
   showDots?: boolean
   arrowPosition?: 'sides' | 'below'

@@ -1,0 +1,91 @@
+# https://taskfile.dev
+version: "3"
+
+tasks:
+  default:
+    desc: "List all available tasks"
+    silent: true
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Install dependencies and generate Nuxt type stubs (run once per clone)"
+    cmds:
+      - pnpm install
+      - pnpm run dev:prepare
+
+  setup:hooks:
+    desc: "Install the pre-commit hooks (formatting, lint, commit-message checks)"
+    cmds:
+      - pnpm run setup:hooks
+
+  dev:
+    desc: "Run the playground with the module stubbed in (hot reload)"
+    cmds:
+      - pnpm run dev
+
+  build:
+    desc: "Build the distributable module into dist/"
+    cmds:
+      - pnpm run prepack
+
+  build:playground:
+    desc: "Build the playground app"
+    cmds:
+      - pnpm run dev:build
+
+  generate:
+    desc: "Generate the static playground site (what GitHub Pages deploys)"
+    cmds:
+      - pnpm exec nuxi generate playground
+
+  test:
+    desc: "Run the test suite once"
+    cmds:
+      - pnpm run test
+
+  test:watch:
+    desc: "Run the test suite in watch mode"
+    cmds:
+      - pnpm run test:watch
+
+  test:types:
+    desc: "Type-check the module and the playground"
+    cmds:
+      - pnpm run test:types
+
+  lint:
+    desc: "Lint all files with ESLint"
+    cmds:
+      - pnpm run lint
+
+  lint:fix:
+    desc: "Lint and auto-fix all files with ESLint"
+    cmds:
+      - pnpm run lint:fix
+
+  check:
+    desc: "Run everything CI runs: lint, type-check, tests, build"
+    cmds:
+      - task: lint
+      - task: test:types
+      - task: test
+      - task: build
+
+  clean:
+    desc: "Remove build artifacts and generated dirs (dist, .nuxt, .output, coverage)"
+    cmds:
+      - rm -rf dist .nuxt .output coverage
+      - rm -rf playground/.nuxt playground/.output playground/dist
+      - rm -rf test/fixtures/*/.nuxt test/fixtures/*/.output
+
+  clean:all:
+    desc: "Clean everything including node_modules (follow with `task setup`)"
+    cmds:
+      - task: clean
+      - rm -rf node_modules playground/node_modules
+
+  release:
+    desc: "Lint, test, build, bump version + CHANGELOG, publish to npm, push tags"
+    cmds:
+      - pnpm run release
