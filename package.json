@@ -61,7 +61,7 @@
     "setup:hooks": "pre-commit install && pre-commit install --hook-type commit-msg"
   },
   "dependencies": {
-    "@nuxt/kit": "^4.4.5",
+    "@nuxt/kit": "^4.4.8",
     "embla-carousel": "^8.6.0",
     "embla-carousel-vue": "^8.6.0"
   },
@@ -73,7 +73,7 @@
     "@nuxt/test-utils": "^4.0.3",
     "@types/node": "^24",
     "changelogen": "^0.6.2",
-    "eslint": "^10.3.0",
+    "eslint": "^10.6.0",
     "happy-dom": "^20.9.0",
     "nuxt": "^4.4.5",
     "typescript": "~6.0.3",
