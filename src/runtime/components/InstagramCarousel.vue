@@ -25,32 +25,12 @@
           name="heading"
           v-bind="headingProps"
         >
-          <Transition
-            name="weburz-fade"
-            mode="out-in"
-          >
-            <div
-              :key="activeIndex"
-              class="weburz-active-caption"
-            >
-              <h3
-                v-if="activePost?.title"
-                class="weburz-caption__title"
-              >
-                <a
-                  :href="activePost.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >{{ activePost.title }}</a>
-              </h3>
-              <p
-                v-if="activePost?.description"
-                class="weburz-caption__description"
-              >
-                {{ activePost.description }}
-              </p>
-            </div>
-          </Transition>
+          <CarouselActiveCaption
+            :active-key="activeIndex"
+            :title="activeTitle"
+            :href="activeHref"
+            :description="activeDescription"
+          />
         </slot>
       </template>
       <template
@@ -73,7 +53,7 @@
           <iframe
             :ref="(el: unknown) => bindIframe(el, index)"
             class="weburz-instagram-embed"
-            :src="buildEmbedUrl(post.url)"
+            :src="embedUrl(post.url)"
             :title="post.title ?? `Instagram post ${index + 1}`"
             loading="lazy"
             frameborder="0"
@@ -89,27 +69,12 @@
             @click="unlock(index)"
           />
         </div>
-        <div
+        <CarouselCaption
           v-if="captions === 'per-slide' && (post.title || post.description)"
-          class="weburz-caption"
-        >
-          <h3
-            v-if="post.title"
-            class="weburz-caption__title"
-          >
-            <a
-              :href="post.url"
-              target="_blank"
-              rel="noopener noreferrer"
-            >{{ post.title }}</a>
-          </h3>
-          <p
-            v-if="post.description"
-            class="weburz-caption__description"
-          >
-            {{ post.description }}
-          </p>
-        </div>
+          :title="post.title"
+          :href="post.url"
+          :description="post.description"
+        />
       </BaseSlide>
     </BaseCarousel>
   </div>
@@ -117,12 +82,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { InstagramPost, SlidesPerView } from '../types'
+import type { CarouselSharedProps, InstagramPost } from '../types'
 import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
+import { buildInstagramEmbedUrl } from '../utils/embeds'
+import CarouselActiveCaption from './CarouselActiveCaption.vue'
+import CarouselCaption from './CarouselCaption.vue'
 
-interface Props {
+interface Props extends CarouselSharedProps {
   posts: InstagramPost[]
   pauseOnLeave?: boolean
   onScrollAway?: 'pause' | 'none'
@@ -141,17 +108,6 @@ interface Props {
    * has no public metadata API to auto-fetch from.
    */
   captions?: 'none' | 'per-slide' | 'active'
-  options?: EmblaOptionsType
-  plugins?: EmblaPluginType[]
-  slidesPerView?: SlidesPerView
-  showArrows?: boolean
-  showDots?: boolean
-  arrowPosition?: 'sides' | 'below'
-  layout?: 'stacked' | 'aside'
-  asidePosition?: 'left' | 'right'
-  title?: string
-  description?: string
-  ariaLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -179,31 +135,19 @@ const props = withDefaults(defineProps<Props>(), {
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const activePost = computed(() => props.posts[activeIndex.value])
-
-const { bind: bindIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
+const activeTitle = computed(() => activePost.value?.title)
+const activeHref = computed(() => activePost.value?.url)
+const activeDescription = computed(() => activePost.value?.description)
 
 // Instagram's direct embed URL bypasses embed.js entirely — works even when
-// content blockers drop instagram.com/embed.js. We use /embed/captioned/ rather
-// than /embed/ because the captionless variant responds with
-// X-Frame-Options: DENY (refuses to render inside iframes), while the captioned
-// variant has no such header. This is the same URL IG's own embed.js resolves to.
-const buildEmbedUrl = (url: string): string => {
-  // Share links carry query trackers (?igsh=…, ?utm_source=…) that would end up
-  // mid-path if we appended to the raw string — rebuild from origin + pathname.
-  try {
-    const { origin, pathname } = new URL(url)
-    const base = pathname.endsWith('/') ? pathname : `${pathname}/`
-    return `${origin}${base}embed/captioned/`
-  }
-  catch {
-    const trimmed = url.endsWith('/') ? url : `${url}/`
-    return `${trimmed}embed/captioned/`
-  }
-}
+// content blockers drop instagram.com/embed.js (see buildInstagramEmbedUrl).
+const embedUrl = (url: string) => buildInstagramEmbedUrl(url)
 
 // IG has no postMessage control API, so pause = park the iframe (src → about:blank).
 // On scroll-back / swipe-back the original src is restored, which causes a brief
 // reload of the embed. Acceptable trade-off; opt out via prop if it bothers you.
+
+const { bind: bindIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
 
 // Embla cancels the click that follows a drag, so dragging across the overlay
 // never accidentally unlocks a post.
@@ -273,51 +217,5 @@ useScrollAwayHandler(
 .weburz-instagram-overlay:focus-visible {
   outline: 2px solid var(--weburz-carousel-accent, currentColor);
   outline-offset: 2px;
-}
-
-.weburz-caption {
-  margin-top: var(--weburz-carousel-caption-gap, 0.75rem);
-  text-align: var(--weburz-carousel-caption-align, center);
-}
-
-.weburz-active-caption {
-  text-align: var(--weburz-carousel-active-caption-align, start);
-}
-
-.weburz-fade-enter-active,
-.weburz-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.weburz-fade-enter-from {
-  opacity: 0;
-  transform: translateY(0.25rem);
-}
-
-.weburz-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-0.25rem);
-}
-
-.weburz-caption__title {
-  margin: 0;
-  font-size: var(--weburz-carousel-caption-title-size, 1rem);
-  font-weight: var(--weburz-carousel-caption-title-weight, 600);
-}
-
-.weburz-caption__title a {
-  color: var(--weburz-carousel-caption-title-color, inherit);
-  text-decoration: none;
-}
-
-.weburz-caption__title a:hover {
-  text-decoration: underline;
-}
-
-.weburz-caption__description {
-  margin: 0.25rem 0 0;
-  font-size: var(--weburz-carousel-caption-description-size, 0.875rem);
-  color: var(--weburz-carousel-caption-description-color, inherit);
-  opacity: var(--weburz-carousel-caption-description-opacity, 0.7);
 }
 </style>

@@ -134,24 +134,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, provide, useId, watch } from 'vue'
-import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
 import { useCarousel } from '../composables/useCarousel'
 import { buildSlidesCss, resolveBaseSlides } from '../utils/slides'
-import type { SlidesPerView } from '../types'
+import type { CarouselSharedProps } from '../types'
 
-interface Props {
-  options?: EmblaOptionsType
-  plugins?: EmblaPluginType[]
-  slidesPerView?: SlidesPerView
-  showArrows?: boolean
-  showDots?: boolean
-  arrowPosition?: 'sides' | 'below'
-  layout?: 'stacked' | 'aside'
-  asidePosition?: 'left' | 'right'
-  title?: string
-  description?: string
-  ariaLabel?: string
-}
+type Props = CarouselSharedProps
 
 const props = withDefaults(defineProps<Props>(), {
   options: () => ({}),

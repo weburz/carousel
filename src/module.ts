@@ -65,12 +65,8 @@ export default defineNuxtModule<ModuleOptions>({
         from: resolver.resolve('./runtime/composables/useYouTubePlayer'),
       },
       {
-        name: 'useInstagramEmbed',
-        from: resolver.resolve('./runtime/composables/useInstagramEmbed'),
-      },
-      {
-        name: 'useTikTokEmbed',
-        from: resolver.resolve('./runtime/composables/useTikTokEmbed'),
+        name: 'useYouTubeMedia',
+        from: resolver.resolve('./runtime/composables/useYouTubeMedia'),
       },
       {
         name: 'useEmbedMetadata',

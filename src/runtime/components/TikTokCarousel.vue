@@ -25,32 +25,12 @@
           name="heading"
           v-bind="headingProps"
         >
-          <Transition
-            name="weburz-fade"
-            mode="out-in"
-          >
-            <div
-              :key="activeIndex"
-              class="weburz-active-caption"
-            >
-              <h3
-                v-if="activeVideo && captionTitle(activeVideo)"
-                class="weburz-caption__title"
-              >
-                <a
-                  :href="activeVideo.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >{{ captionTitle(activeVideo) }}</a>
-              </h3>
-              <p
-                v-if="activeVideo?.description"
-                class="weburz-caption__description"
-              >
-                {{ activeVideo.description }}
-              </p>
-            </div>
-          </Transition>
+          <CarouselActiveCaption
+            :active-key="activeIndex"
+            :title="activeTitle"
+            :href="activeHref"
+            :description="activeDescription"
+          />
         </slot>
       </template>
       <template
@@ -109,7 +89,7 @@
           v-else
           :ref="(el: unknown) => bindIframe(el, index)"
           class="weburz-tiktok-embed"
-          :src="buildEmbedUrl(video.url)"
+          :src="embedUrl(video.url)"
           :title="captionTitle(video) ?? `TikTok video ${index + 1}`"
           loading="lazy"
           frameborder="0"
@@ -117,27 +97,12 @@
           allow="encrypted-media; fullscreen; picture-in-picture; clipboard-write"
           allowfullscreen
         />
-        <div
+        <CarouselCaption
           v-if="captions === 'per-slide' && (captionTitle(video) || video.description)"
-          class="weburz-caption"
-        >
-          <h3
-            v-if="captionTitle(video)"
-            class="weburz-caption__title"
-          >
-            <a
-              :href="video.url"
-              target="_blank"
-              rel="noopener noreferrer"
-            >{{ captionTitle(video) }}</a>
-          </h3>
-          <p
-            v-if="video.description"
-            class="weburz-caption__description"
-          >
-            {{ video.description }}
-          </p>
-        </div>
+          :title="captionTitle(video)"
+          :href="video.url"
+          :description="video.description"
+        />
       </BaseSlide>
     </BaseCarousel>
   </div>
@@ -145,14 +110,20 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { SlidesPerView, TikTokCarouselMode, TikTokVideo } from '../types'
+import type {
+  CarouselSharedProps,
+  TikTokCarouselMode,
+  TikTokVideo,
+} from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useFacadeActivation } from '../composables/useFacadeActivation'
 import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
+import { buildTikTokEmbedUrl } from '../utils/embeds'
+import CarouselActiveCaption from './CarouselActiveCaption.vue'
+import CarouselCaption from './CarouselCaption.vue'
 
-interface Props {
+interface Props extends CarouselSharedProps {
   videos: TikTokVideo[]
   mode?: TikTokCarouselMode
   pauseOnLeave?: boolean
@@ -165,17 +136,6 @@ interface Props {
    */
   captions?: 'none' | 'per-slide' | 'active'
   fetchMetadata?: boolean
-  options?: EmblaOptionsType
-  plugins?: EmblaPluginType[]
-  slidesPerView?: SlidesPerView
-  showArrows?: boolean
-  showDots?: boolean
-  arrowPosition?: 'sides' | 'below'
-  layout?: 'stacked' | 'aside'
-  asidePosition?: 'left' | 'right'
-  title?: string
-  description?: string
-  ariaLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -211,6 +171,8 @@ const captionTitle = (video: TikTokVideo) =>
 const thumbUrl = (video: TikTokVideo) =>
   video.thumbnail ?? fetchedThumbs.value[video.url]
 
+const embedUrl = (url: string) => buildTikTokEmbedUrl(url)
+
 onMounted(() => {
   // `fetchMetadata` governs optional caption titles only. Facade thumbnails
   // are NOT optional metadata — without one the facade is a blank box — so
@@ -232,19 +194,14 @@ onMounted(() => {
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const activeVideo = computed(() => props.videos[activeIndex.value])
+const activeTitle = computed(() =>
+  activeVideo.value ? captionTitle(activeVideo.value) : undefined,
+)
+const activeHref = computed(() => activeVideo.value?.url)
+const activeDescription = computed(() => activeVideo.value?.description)
 
 const { activated, isActivated, activate, deactivate } = useFacadeActivation<number>()
 const { bind: bindIframe, remove: removeIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
-
-const extractTikTokId = (url: string): string => {
-  const match = url.match(/\/video\/(\d+)/)
-  return match?.[1] ?? ''
-}
-
-const buildEmbedUrl = (url: string): string => {
-  const id = extractTikTokId(url)
-  return `https://www.tiktok.com/embed/v2/${id}`
-}
 
 // Facade activation: the thumbnail button swaps for the live iframe (which
 // autoplays — TikTok's /embed/v2/ starts on load). Deactivating destroys the
@@ -359,51 +316,5 @@ useScrollAwayHandler(
 .weburz-tiktok-facade:hover .weburz-tiktok-facade__play-bg,
 .weburz-tiktok-facade:focus-visible .weburz-tiktok-facade__play-bg {
   fill: var(--weburz-tiktok-play-bg-hover, #fe2c55);
-}
-
-.weburz-caption {
-  margin-top: var(--weburz-carousel-caption-gap, 0.75rem);
-  text-align: var(--weburz-carousel-caption-align, center);
-}
-
-.weburz-active-caption {
-  text-align: var(--weburz-carousel-active-caption-align, start);
-}
-
-.weburz-fade-enter-active,
-.weburz-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.weburz-fade-enter-from {
-  opacity: 0;
-  transform: translateY(0.25rem);
-}
-
-.weburz-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-0.25rem);
-}
-
-.weburz-caption__title {
-  margin: 0;
-  font-size: var(--weburz-carousel-caption-title-size, 1rem);
-  font-weight: var(--weburz-carousel-caption-title-weight, 600);
-}
-
-.weburz-caption__title a {
-  color: var(--weburz-carousel-caption-title-color, inherit);
-  text-decoration: none;
-}
-
-.weburz-caption__title a:hover {
-  text-decoration: underline;
-}
-
-.weburz-caption__description {
-  margin: 0.25rem 0 0;
-  font-size: var(--weburz-carousel-caption-description-size, 0.875rem);
-  color: var(--weburz-carousel-caption-description-color, inherit);
-  opacity: var(--weburz-carousel-caption-description-opacity, 0.7);
 }
 </style>
