@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## v0.3.4
+
+[compare changes](https://github.com/Weburz/carousel/compare/v0.3.3...v0.3.4)
+
+### 💅 Refactors
+
+- Dedupe embed core across the three carousel wrappers ([#22](https://github.com/Weburz/carousel/pull/22))
+
+### ❤️ Contributors
+
+- Sagar Kapoor ([@sagar-kap](https://github.com/sagar-kap))
+
 ## v0.3.3
 
 [compare changes](https://github.com/Weburz/carousel/compare/v0.3.2...v0.3.3)
