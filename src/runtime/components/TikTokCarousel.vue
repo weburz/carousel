@@ -107,7 +107,7 @@
         </button>
         <iframe
           v-else
-          :ref="(el: Element | null) => bindIframe(el, index)"
+          :ref="(el: unknown) => bindIframe(el, index)"
           class="weburz-tiktok-embed"
           :src="buildEmbedUrl(video.url)"
           :title="captionTitle(video) ?? `TikTok video ${index + 1}`"
@@ -148,6 +148,8 @@ import { computed, onMounted, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
 import type { SlidesPerView, TikTokCarouselMode, TikTokVideo } from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
+import { useFacadeActivation } from '../composables/useFacadeActivation'
+import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 
 interface Props {
@@ -230,8 +232,9 @@ onMounted(() => {
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const activeVideo = computed(() => props.videos[activeIndex.value])
-const iframeEls = new Map<number, HTMLIFrameElement>()
-const boundIframes = new Set<number>()
+
+const { activated, isActivated, activate, deactivate } = useFacadeActivation<number>()
+const { bind: bindIframe, remove: removeIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
 
 const extractTikTokId = (url: string): string => {
   const match = url.match(/\/video\/(\d+)/)
@@ -243,47 +246,13 @@ const buildEmbedUrl = (url: string): string => {
   return `https://www.tiktok.com/embed/v2/${id}`
 }
 
-const bindIframe = (el: Element | null, index: number) => {
-  if (!el || !(el instanceof HTMLIFrameElement)) return
-  iframeEls.set(index, el)
-  if (boundIframes.has(index)) return
-  boundIframes.add(index)
-}
-
 // Facade activation: the thumbnail button swaps for the live iframe (which
 // autoplays — TikTok's /embed/v2/ starts on load). Deactivating destroys the
 // iframe, hard-stopping playback, and brings the thumbnail back.
-const activatedIndexes = ref(new Set<number>())
-const isActivated = (index: number) => activatedIndexes.value.has(index)
-
-const activate = (index: number) => {
-  const next = new Set(activatedIndexes.value)
-  next.add(index)
-  activatedIndexes.value = next
-}
-
-const deactivate = (index: number) => {
-  if (!activatedIndexes.value.has(index)) return
-  const next = new Set(activatedIndexes.value)
-  next.delete(index)
-  activatedIndexes.value = next
-  iframeEls.delete(index)
-  boundIframes.delete(index)
-}
-
-const unloadIframe = (iframe: HTMLIFrameElement) => {
-  if (iframe.src && iframe.src !== 'about:blank') {
-    iframe.dataset.savedSrc = iframe.src
-    iframe.src = 'about:blank'
-  }
-}
-
-const restoreIframe = (iframe: HTMLIFrameElement) => {
-  const saved = iframe.dataset.savedSrc
-  if (saved && iframe.src === 'about:blank') {
-    iframe.src = saved
-    delete iframe.dataset.savedSrc
-  }
+const deactivateFacade = (index: number) => {
+  if (!isActivated(index)) return
+  deactivate(index)
+  removeIframe(index)
 }
 
 const onSelect = (index: number) => {
@@ -291,13 +260,11 @@ const onSelect = (index: number) => {
   activeIndex.value = index
   if (!props.pauseOnLeave) return
   if (props.mode === 'facade') {
-    deactivate(previousIndex)
+    deactivateFacade(previousIndex)
     return
   }
-  const previous = iframeEls.get(previousIndex)
-  if (previous) unloadIframe(previous)
-  const current = iframeEls.get(index)
-  if (current) restoreIframe(current)
+  park(previousIndex)
+  restore(index)
 }
 
 useScrollAwayHandler(
@@ -307,14 +274,14 @@ useScrollAwayHandler(
     if (props.mode === 'facade') {
       // Destroy rather than about:blank-park: the facade is the natural
       // stopped state, and it stays swipeable when the user scrolls back.
-      for (const index of [...activatedIndexes.value]) deactivate(index)
+      for (const index of [...activated.value]) deactivateFacade(index)
       return
     }
-    iframeEls.forEach(unloadIframe)
+    parkAll()
   },
   () => {
     if (props.mode === 'facade') return
-    iframeEls.forEach(restoreIframe)
+    restoreAll()
   },
 )
 </script>

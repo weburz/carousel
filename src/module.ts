@@ -76,6 +76,14 @@ export default defineNuxtModule<ModuleOptions>({
         name: 'useEmbedMetadata',
         from: resolver.resolve('./runtime/composables/useEmbedMetadata'),
       },
+      {
+        name: 'useFacadeActivation',
+        from: resolver.resolve('./runtime/composables/useFacadeActivation'),
+      },
+      {
+        name: 'useFrameRegistry',
+        from: resolver.resolve('./runtime/composables/useFrameRegistry'),
+      },
     ])
   },
 })

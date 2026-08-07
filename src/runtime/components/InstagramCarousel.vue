@@ -71,7 +71,7 @@
       >
         <div class="weburz-instagram-media">
           <iframe
-            :ref="(el: Element | null) => bindIframe(el, index)"
+            :ref="(el: unknown) => bindIframe(el, index)"
             class="weburz-instagram-embed"
             :src="buildEmbedUrl(post.url)"
             :title="post.title ?? `Instagram post ${index + 1}`"
@@ -119,6 +119,7 @@
 import { computed, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
 import type { InstagramPost, SlidesPerView } from '../types'
+import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 
 interface Props {
@@ -178,8 +179,8 @@ const props = withDefaults(defineProps<Props>(), {
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const activePost = computed(() => props.posts[activeIndex.value])
-const iframeEls = new Map<number, HTMLIFrameElement>()
-const boundIframes = new Set<number>()
+
+const { bind: bindIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
 
 // Instagram's direct embed URL bypasses embed.js entirely — works even when
 // content blockers drop instagram.com/embed.js. We use /embed/captioned/ rather
@@ -200,30 +201,9 @@ const buildEmbedUrl = (url: string): string => {
   }
 }
 
-const bindIframe = (el: Element | null, index: number) => {
-  if (!el || !(el instanceof HTMLIFrameElement)) return
-  iframeEls.set(index, el)
-  if (boundIframes.has(index)) return
-  boundIframes.add(index)
-}
-
-// IG has no postMessage control API, so pause = unload the iframe (src → about:blank).
+// IG has no postMessage control API, so pause = park the iframe (src → about:blank).
 // On scroll-back / swipe-back the original src is restored, which causes a brief
 // reload of the embed. Acceptable trade-off; opt out via prop if it bothers you.
-const unloadIframe = (iframe: HTMLIFrameElement) => {
-  if (iframe.src && iframe.src !== 'about:blank') {
-    iframe.dataset.savedSrc = iframe.src
-    iframe.src = 'about:blank'
-  }
-}
-
-const restoreIframe = (iframe: HTMLIFrameElement) => {
-  const saved = iframe.dataset.savedSrc
-  if (saved && iframe.src === 'about:blank') {
-    iframe.src = saved
-    delete iframe.dataset.savedSrc
-  }
-}
 
 // Embla cancels the click that follows a drag, so dragging across the overlay
 // never accidentally unlocks a post.
@@ -237,20 +217,18 @@ const onSelect = (index: number) => {
   activeIndex.value = index
   unlockedIndex.value = null
   if (!props.pauseOnLeave) return
-  const previous = iframeEls.get(previousIndex)
-  if (previous) unloadIframe(previous)
-  const current = iframeEls.get(index)
-  if (current) restoreIframe(current)
+  park(previousIndex)
+  restore(index)
 }
 
 useScrollAwayHandler(
   rootEl,
   () => {
     if (props.onScrollAway !== 'pause') return
-    iframeEls.forEach(unloadIframe)
+    parkAll()
   },
   () => {
-    iframeEls.forEach(restoreIframe)
+    restoreAll()
   },
 )
 </script>
