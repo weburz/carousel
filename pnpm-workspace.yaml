@@ -1,5 +1,16 @@
 packages:
   - playground
+# Vite and browserslist tooling ship several releases per week; a fresh
+# release fails the 24h minimumReleaseAge supply-chain policy in CI for
+# hours. Pin the highest aged versions that still satisfy the ranges and
+# the patched releases for the advisory versions below.
+overrides:
+  # nuxt 4.5.1 accepts vite ^8.1.5; hold the previous 8.2 patch.
+  vite: 8.2.0
+  caniuse-lite: 1.0.30001800
+  update-browserslist-db: 1.2.3
+  # svgo < 4.0.2 is vulnerable (GHSA-2p49-hgcm-8545).
+  svgo: 4.0.2
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
