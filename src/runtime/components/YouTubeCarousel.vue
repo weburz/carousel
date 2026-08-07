@@ -106,7 +106,7 @@
           </button>
           <iframe
             v-else-if="mode === 'iframe-embed' || mode === 'facade'"
-            :ref="(el: Element | null) => bindIframe(el, video)"
+            :ref="(el: unknown) => bindIframe(el, video.id, (frame) => sendListening(frame, video.id))"
             :src="buildEmbedUrl(video)"
             :title="captionTitle(video) ?? `YouTube ${video.kind ?? 'video'} ${video.id}`"
             loading="lazy"
@@ -116,7 +116,7 @@
           />
           <div
             v-else
-            :ref="(el: Element | null) => bindPlayer(el as HTMLElement | null, video)"
+            :ref="(el: unknown) => bindPlayer(el as HTMLElement | null, video)"
             class="weburz-yt__player"
             :data-video-id="video.id"
           />
@@ -152,6 +152,8 @@ import { computed, onMounted, ref } from 'vue'
 import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
 import type { SlidesPerView, YouTubeCarouselMode, YouTubeVideo } from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
+import { useFacadeActivation } from '../composables/useFacadeActivation'
+import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { useYouTubePlayer } from '../composables/useYouTubePlayer'
 
@@ -239,22 +241,13 @@ const onThumbError = (video: YouTubeVideo) => {
 // Activated facade slides have swapped their thumbnail for a live iframe.
 // Deactivating destroys the iframe (hard-stops playback) and brings the
 // facade back.
-const activatedIds = ref(new Set<string>())
-const isActivated = (id: string) => activatedIds.value.has(id)
+const { isActivated, activate, deactivate } = useFacadeActivation<string>()
+const { bind: bindIframe, get: getIframe, remove: removeIframe } = useFrameRegistry<string>()
 
-const activate = (id: string) => {
-  const next = new Set(activatedIds.value)
-  next.add(id)
-  activatedIds.value = next
-}
-
-const deactivate = (id: string) => {
-  if (!activatedIds.value.has(id)) return
-  const next = new Set(activatedIds.value)
-  next.delete(id)
-  activatedIds.value = next
-  iframeEls.delete(id)
-  registeredIframes.delete(id)
+const deactivateFacade = (id: string) => {
+  if (!isActivated(id)) return
+  deactivate(id)
+  removeIframe(id)
 }
 
 const { forYouTube } = useEmbedMetadata()
@@ -283,9 +276,7 @@ const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const activeVideo = computed(() => props.videos[activeIndex.value])
 const playerEls = new Map<string, HTMLElement>()
-const iframeEls = new Map<string, HTMLIFrameElement>()
 const registeredPlayers = new Set<string>()
-const registeredIframes = new Set<string>()
 
 const { register, pause, play, mute, unmute } = useYouTubePlayer()
 
@@ -303,25 +294,21 @@ const bindPlayer = (el: HTMLElement | null, video: YouTubeVideo) => {
   }
 }
 
-const bindIframe = (el: Element | null, video: YouTubeVideo) => {
-  if (!el || !(el instanceof HTMLIFrameElement)) return
-  iframeEls.set(video.id, el)
-  if (registeredIframes.has(video.id)) return
-  registeredIframes.add(video.id)
-  // YouTube only reliably accepts postMessage commands once the parent has
-  // sent a "listening" handshake. Without this, mute/pause work intermittently.
-  const sendListening = () => {
+// YouTube only reliably accepts postMessage commands once the parent has sent a
+// "listening" handshake. Without this, mute/pause work intermittently.
+const sendListening = (el: HTMLIFrameElement, id: string) => {
+  const handshake = () => {
     el.contentWindow?.postMessage(
       JSON.stringify({
         event: 'listening',
-        id: `weburz-${video.id}`,
+        id: `weburz-${id}`,
         channel: 'widget',
       }),
       '*',
     )
   }
-  el.addEventListener('load', sendListening, { once: true })
-  sendListening()
+  el.addEventListener('load', handshake, { once: true })
+  handshake()
 }
 
 const postIframeCommand = (iframe: HTMLIFrameElement, func: string) => {
@@ -338,7 +325,7 @@ const unmuteIframe = (iframe: HTMLIFrameElement) => postIframeCommand(iframe, 'u
 
 const playByVideo = (video: YouTubeVideo) => {
   if (props.mode !== 'player-api') {
-    const iframe = iframeEls.get(video.id)
+    const iframe = getIframe(video.id)
     if (iframe) playIframe(iframe)
     return
   }
@@ -348,7 +335,7 @@ const playByVideo = (video: YouTubeVideo) => {
 
 const pauseByVideo = (video: YouTubeVideo) => {
   if (props.mode !== 'player-api') {
-    const iframe = iframeEls.get(video.id)
+    const iframe = getIframe(video.id)
     if (iframe) pauseIframe(iframe)
     return
   }
@@ -358,7 +345,7 @@ const pauseByVideo = (video: YouTubeVideo) => {
 
 const muteByVideo = (video: YouTubeVideo) => {
   if (props.mode !== 'player-api') {
-    const iframe = iframeEls.get(video.id)
+    const iframe = getIframe(video.id)
     if (iframe) muteIframe(iframe)
     return
   }
@@ -368,7 +355,7 @@ const muteByVideo = (video: YouTubeVideo) => {
 
 const unmuteByVideo = (video: YouTubeVideo) => {
   if (props.mode !== 'player-api') {
-    const iframe = iframeEls.get(video.id)
+    const iframe = getIframe(video.id)
     if (iframe) unmuteIframe(iframe)
     return
   }
@@ -384,7 +371,7 @@ const onSelect = (index: number) => {
   if (!previousVideo) return
   // Facade slides revert to the thumbnail on leave: destroying the iframe is
   // the only hard stop, and the facade is the natural "stopped" state.
-  if (props.mode === 'facade') deactivate(previousVideo.id)
+  if (props.mode === 'facade') deactivateFacade(previousVideo.id)
   else pauseByVideo(previousVideo)
 }
 
