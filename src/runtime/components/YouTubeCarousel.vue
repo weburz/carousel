@@ -25,32 +25,12 @@
           name="heading"
           v-bind="headingProps"
         >
-          <Transition
-            name="weburz-fade"
-            mode="out-in"
-          >
-            <div
-              :key="activeIndex"
-              class="weburz-active-caption"
-            >
-              <h3
-                v-if="activeVideo && captionTitle(activeVideo)"
-                class="weburz-caption__title"
-              >
-                <a
-                  :href="watchUrl(activeVideo)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >{{ captionTitle(activeVideo) }}</a>
-              </h3>
-              <p
-                v-if="activeVideo?.description"
-                class="weburz-caption__description"
-              >
-                {{ activeVideo.description }}
-              </p>
-            </div>
-          </Transition>
+          <CarouselActiveCaption
+            :active-key="activeIndex"
+            :title="activeTitle"
+            :href="activeHref"
+            :description="activeDescription"
+          />
         </slot>
       </template>
       <template
@@ -71,18 +51,18 @@
       >
         <div :class="['weburz-yt', `weburz-yt--${video.kind ?? 'video'}`]">
           <button
-            v-if="mode === 'facade' && !isActivated(video.id)"
+            v-if="isThumbnail(video)"
             type="button"
             class="weburz-yt__facade"
             :aria-label="`Play ${captionTitle(video) ?? `YouTube ${video.kind ?? 'video'}`}`"
-            @click="activate(video.id)"
+            @click="activateFacade(video)"
           >
             <img
               class="weburz-yt__thumb"
-              :src="thumbUrl(video)"
+              :src="thumbnailUrl(video)"
               :alt="captionTitle(video) ?? ''"
               loading="lazy"
-              @error="onThumbError(video)"
+              @error="onThumbnailError(video)"
             >
             <span
               class="weburz-yt__play"
@@ -105,9 +85,9 @@
             </span>
           </button>
           <iframe
-            v-else-if="mode === 'iframe-embed' || mode === 'facade'"
-            :ref="(el: unknown) => bindIframe(el, video.id, (frame) => sendListening(frame, video.id))"
-            :src="buildEmbedUrl(video)"
+            v-else-if="mode !== 'player-api'"
+            :ref="(el: unknown) => bindIframe(el, video)"
+            :src="embedUrl(video)"
             :title="captionTitle(video) ?? `YouTube ${video.kind ?? 'video'} ${video.id}`"
             loading="lazy"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -118,30 +98,14 @@
             v-else
             :ref="(el: unknown) => bindPlayer(el as HTMLElement | null, video)"
             class="weburz-yt__player"
-            :data-video-id="video.id"
           />
         </div>
-        <div
+        <CarouselCaption
           v-if="captions === 'per-slide' && (captionTitle(video) || video.description)"
-          class="weburz-caption"
-        >
-          <h3
-            v-if="captionTitle(video)"
-            class="weburz-caption__title"
-          >
-            <a
-              :href="watchUrl(video)"
-              target="_blank"
-              rel="noopener noreferrer"
-            >{{ captionTitle(video) }}</a>
-          </h3>
-          <p
-            v-if="video.description"
-            class="weburz-caption__description"
-          >
-            {{ video.description }}
-          </p>
-        </div>
+          :title="captionTitle(video)"
+          :href="captionHref(video)"
+          :description="video.description"
+        />
       </BaseSlide>
     </BaseCarousel>
   </div>
@@ -149,15 +113,19 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { SlidesPerView, YouTubeCarouselMode, YouTubeVideo } from '../types'
+import type {
+  CarouselSharedProps,
+  YouTubeCarouselMode,
+  YouTubeVideo,
+} from '../types'
 import { useEmbedMetadata } from '../composables/useEmbedMetadata'
-import { useFacadeActivation } from '../composables/useFacadeActivation'
-import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
-import { useYouTubePlayer } from '../composables/useYouTubePlayer'
+import { useYouTubeMedia } from '../composables/useYouTubeMedia'
+import { youtubeWatchUrl } from '../utils/embeds'
+import CarouselActiveCaption from './CarouselActiveCaption.vue'
+import CarouselCaption from './CarouselCaption.vue'
 
-interface Props {
+interface Props extends CarouselSharedProps {
   videos: YouTubeVideo[]
   mode?: YouTubeCarouselMode
   nocookie?: boolean
@@ -171,17 +139,6 @@ interface Props {
    */
   captions?: 'none' | 'per-slide' | 'active'
   fetchMetadata?: boolean
-  options?: EmblaOptionsType
-  plugins?: EmblaPluginType[]
-  slidesPerView?: SlidesPerView
-  showArrows?: boolean
-  showDots?: boolean
-  arrowPosition?: 'sides' | 'below'
-  layout?: 'stacked' | 'aside'
-  asidePosition?: 'left' | 'right'
-  title?: string
-  description?: string
-  ariaLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -205,50 +162,20 @@ const props = withDefaults(defineProps<Props>(), {
   ariaLabel: undefined,
 })
 
-const buildEmbedUrl = (video: YouTubeVideo) => {
-  const host = props.nocookie ? 'www.youtube-nocookie.com' : 'www.youtube.com'
-  const params = new URLSearchParams({
-    playsinline: '1',
-    rel: '0',
-    modestbranding: '1',
-    enablejsapi: '1',
-  })
-  // A facade iframe only exists because the user tapped play — start
-  // immediately so the facade tap counts as the play gesture.
-  if (props.mode === 'facade') params.set('autoplay', '1')
-  return `https://${host}/embed/${video.id}?${params}`
-}
-
-// Facade thumbnails are keyless: i.ytimg.com serves them for every video.
-// Shorts get the portrait variant (oar2) with a fallback to hqdefault,
-// since oar2 isn't generated for older uploads.
-const thumbFallbacks = ref<Record<string, string>>({})
-
-const thumbUrl = (video: YouTubeVideo) =>
-  thumbFallbacks.value[video.id]
-  ?? video.thumbnail
-  ?? (video.kind === 'shorts'
-    ? `https://i.ytimg.com/vi/${video.id}/oar2.jpg`
-    : `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`)
-
-const onThumbError = (video: YouTubeVideo) => {
-  const fallback = `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
-  if (thumbUrl(video) !== fallback) {
-    thumbFallbacks.value[video.id] = fallback
-  }
-}
-
-// Activated facade slides have swapped their thumbnail for a live iframe.
-// Deactivating destroys the iframe (hard-stops playback) and brings the
-// facade back.
-const { isActivated, activate, deactivate } = useFacadeActivation<string>()
-const { bind: bindIframe, get: getIframe, remove: removeIframe } = useFrameRegistry<string>()
-
-const deactivateFacade = (id: string) => {
-  if (!isActivated(id)) return
-  deactivate(id)
-  removeIframe(id)
-}
+const {
+  embedUrl,
+  thumbnailUrl,
+  onThumbnailError,
+  isThumbnail,
+  activateFacade,
+  bindIframe,
+  bindPlayer,
+  playVideo,
+  pauseVideo,
+  muteVideo,
+  unmuteVideo,
+  stopVideo,
+} = useYouTubeMedia(() => props.mode, () => props.nocookie)
 
 const { forYouTube } = useEmbedMetadata()
 const fetchedTitles = ref<Record<string, string>>({})
@@ -256,11 +183,8 @@ const fetchedTitles = ref<Record<string, string>>({})
 const captionTitle = (video: YouTubeVideo) =>
   video.title ?? fetchedTitles.value[video.id]
 
-const watchUrl = (video: YouTubeVideo) =>
-  video.url
-  ?? (video.kind === 'shorts'
-    ? `https://www.youtube.com/shorts/${video.id}`
-    : `https://www.youtube.com/watch?v=${video.id}`)
+const captionHref = (video: YouTubeVideo) =>
+  youtubeWatchUrl(video.id, video.kind ?? 'video', video.url)
 
 onMounted(() => {
   if (!props.fetchMetadata || props.captions === 'none') return
@@ -275,93 +199,13 @@ onMounted(() => {
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
 const activeVideo = computed(() => props.videos[activeIndex.value])
-const playerEls = new Map<string, HTMLElement>()
-const registeredPlayers = new Set<string>()
-
-const { register, pause, play, mute, unmute } = useYouTubePlayer()
-
-const bindPlayer = (el: HTMLElement | null, video: YouTubeVideo) => {
-  // Vue's inline function refs fire null callbacks on every re-render even when
-  // the element hasn't really gone away. Ignoring null avoids losing the entry.
-  if (!el) return
-  playerEls.set(video.id, el)
-  if (registeredPlayers.has(video.id)) return
-  if (props.mode === 'player-api' && import.meta.client) {
-    registeredPlayers.add(video.id)
-    register(el, video.id, { nocookie: props.nocookie }).catch(() => {
-      registeredPlayers.delete(video.id)
-    })
-  }
-}
-
-// YouTube only reliably accepts postMessage commands once the parent has sent a
-// "listening" handshake. Without this, mute/pause work intermittently.
-const sendListening = (el: HTMLIFrameElement, id: string) => {
-  const handshake = () => {
-    el.contentWindow?.postMessage(
-      JSON.stringify({
-        event: 'listening',
-        id: `weburz-${id}`,
-        channel: 'widget',
-      }),
-      '*',
-    )
-  }
-  el.addEventListener('load', handshake, { once: true })
-  handshake()
-}
-
-const postIframeCommand = (iframe: HTMLIFrameElement, func: string) => {
-  iframe.contentWindow?.postMessage(
-    JSON.stringify({ event: 'command', func, args: [] }),
-    '*',
-  )
-}
-
-const pauseIframe = (iframe: HTMLIFrameElement) => postIframeCommand(iframe, 'pauseVideo')
-const playIframe = (iframe: HTMLIFrameElement) => postIframeCommand(iframe, 'playVideo')
-const muteIframe = (iframe: HTMLIFrameElement) => postIframeCommand(iframe, 'mute')
-const unmuteIframe = (iframe: HTMLIFrameElement) => postIframeCommand(iframe, 'unMute')
-
-const playByVideo = (video: YouTubeVideo) => {
-  if (props.mode !== 'player-api') {
-    const iframe = getIframe(video.id)
-    if (iframe) playIframe(iframe)
-    return
-  }
-  const el = playerEls.get(video.id)
-  if (el) play(el)
-}
-
-const pauseByVideo = (video: YouTubeVideo) => {
-  if (props.mode !== 'player-api') {
-    const iframe = getIframe(video.id)
-    if (iframe) pauseIframe(iframe)
-    return
-  }
-  const el = playerEls.get(video.id)
-  if (el) pause(el)
-}
-
-const muteByVideo = (video: YouTubeVideo) => {
-  if (props.mode !== 'player-api') {
-    const iframe = getIframe(video.id)
-    if (iframe) muteIframe(iframe)
-    return
-  }
-  const el = playerEls.get(video.id)
-  if (el) mute(el)
-}
-
-const unmuteByVideo = (video: YouTubeVideo) => {
-  if (props.mode !== 'player-api') {
-    const iframe = getIframe(video.id)
-    if (iframe) unmuteIframe(iframe)
-    return
-  }
-  const el = playerEls.get(video.id)
-  if (el) unmute(el)
-}
+const activeTitle = computed(() =>
+  activeVideo.value ? captionTitle(activeVideo.value) : undefined,
+)
+const activeHref = computed(() =>
+  activeVideo.value ? captionHref(activeVideo.value) : undefined,
+)
+const activeDescription = computed(() => activeVideo.value?.description)
 
 const onSelect = (index: number) => {
   const previousIndex = activeIndex.value
@@ -369,10 +213,9 @@ const onSelect = (index: number) => {
   if (!props.pauseOnLeave) return
   const previousVideo = props.videos[previousIndex]
   if (!previousVideo) return
-  // Facade slides revert to the thumbnail on leave: destroying the iframe is
-  // the only hard stop, and the facade is the natural "stopped" state.
-  if (props.mode === 'facade') deactivateFacade(previousVideo.id)
-  else pauseByVideo(previousVideo)
+  // Facade slides revert to the "stopped" thumbnail state on leave; the other
+  // modes pause. (Facade deactivation destroys the iframe — the only hard stop.)
+  stopVideo(previousVideo)
 }
 
 let mutedByObserver = false
@@ -381,20 +224,20 @@ useScrollAwayHandler(
   rootEl,
   () => {
     if (props.onScrollAway === 'pause') {
-      for (const video of props.videos) pauseByVideo(video)
+      for (const video of props.videos) pauseVideo(video)
     }
     else if (props.onScrollAway === 'mute') {
-      for (const video of props.videos) muteByVideo(video)
+      for (const video of props.videos) muteVideo(video)
       mutedByObserver = true
     }
   },
   () => {
     const activeVideo = props.videos[activeIndex.value]
     if (props.mode === 'player-api' && props.autoplayOnScroll && activeVideo) {
-      playByVideo(activeVideo)
+      playVideo(activeVideo)
     }
     if (mutedByObserver) {
-      for (const video of props.videos) unmuteByVideo(video)
+      for (const video of props.videos) unmuteVideo(video)
       mutedByObserver = false
     }
   },
@@ -485,51 +328,5 @@ useScrollAwayHandler(
 .weburz-yt__facade:hover .weburz-yt__play-bg,
 .weburz-yt__facade:focus-visible .weburz-yt__play-bg {
   fill: var(--weburz-yt-play-bg-hover, #f03);
-}
-
-.weburz-caption {
-  margin-top: var(--weburz-carousel-caption-gap, 0.75rem);
-  text-align: var(--weburz-carousel-caption-align, center);
-}
-
-.weburz-active-caption {
-  text-align: var(--weburz-carousel-active-caption-align, start);
-}
-
-.weburz-fade-enter-active,
-.weburz-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.weburz-fade-enter-from {
-  opacity: 0;
-  transform: translateY(0.25rem);
-}
-
-.weburz-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-0.25rem);
-}
-
-.weburz-caption__title {
-  margin: 0;
-  font-size: var(--weburz-carousel-caption-title-size, 1rem);
-  font-weight: var(--weburz-carousel-caption-title-weight, 600);
-}
-
-.weburz-caption__title a {
-  color: var(--weburz-carousel-caption-title-color, inherit);
-  text-decoration: none;
-}
-
-.weburz-caption__title a:hover {
-  text-decoration: underline;
-}
-
-.weburz-caption__description {
-  margin: 0.25rem 0 0;
-  font-size: var(--weburz-carousel-caption-description-size, 0.875rem);
-  color: var(--weburz-carousel-caption-description-color, inherit);
-  opacity: var(--weburz-carousel-caption-description-opacity, 0.7);
 }
 </style>
