@@ -26,12 +26,12 @@
         :key="video.url"
       >
         <EmbedFacade
-          v-if="mode === 'facade' && !isActivated(index)"
+          v-if="mode === 'facade' && !isActivated(video.url)"
           class="weburz-tiktok-embed weburz-tiktok-facade"
           :label="`Play ${captionTitle(video) ?? `TikTok video ${index + 1}`}`"
           :thumbnail="thumbUrl(video)"
           :alt="captionTitle(video) ?? ''"
-          @activate="activate(index)"
+          @activate="activate(video.url)"
         >
           <template #icon>
             <svg
@@ -54,7 +54,7 @@
         </EmbedFacade>
         <iframe
           v-else
-          :ref="(el: unknown) => bindIframe(el, index)"
+          :ref="(el: unknown) => bindIframe(el, video.url)"
           class="weburz-tiktok-embed"
           :src="buildTikTokEmbedUrl(video.url)"
           :title="captionTitle(video) ?? `TikTok video ${index + 1}`"
@@ -157,28 +157,32 @@ const activeCaption = computed(() => {
   return video ? slideCaption(video) : undefined
 })
 
-const { activated, isActivated, activate, deactivate } = useFacadeActivation<number>()
-const { bind: bindIframe, remove: removeIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
+// Keyed by URL (not slide index) so reordering the `videos` prop keeps
+// activation/park state attached to the right embed.
+const { activated, isActivated, activate, deactivate } = useFacadeActivation<string>()
+const { bind: bindIframe, remove: removeIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<string>()
 
 // Facade activation: the thumbnail button swaps for the live iframe (which
 // autoplays — TikTok's /embed/v2/ starts on load). Deactivating destroys the
 // iframe, hard-stopping playback, and brings the thumbnail back.
-const deactivateFacade = (index: number) => {
-  if (!isActivated(index)) return
-  deactivate(index)
-  removeIframe(index)
+const deactivateFacade = (url: string) => {
+  if (!isActivated(url)) return
+  deactivate(url)
+  removeIframe(url)
 }
 
 const onSelect = (index: number) => {
   const previousIndex = activeIndex.value
   activeIndex.value = index
   if (!props.pauseOnLeave) return
+  const previous = props.videos[previousIndex]?.url
+  const current = props.videos[index]?.url
   if (props.mode === 'facade') {
-    deactivateFacade(previousIndex)
+    if (previous) deactivateFacade(previous)
     return
   }
-  park(previousIndex)
-  restore(index)
+  if (previous) park(previous)
+  if (current) restore(current)
 }
 
 useScrollAwayHandler(
@@ -188,7 +192,7 @@ useScrollAwayHandler(
     if (props.mode === 'facade') {
       // Destroy rather than about:blank-park: the facade is the natural
       // stopped state, and it stays swipeable when the user scrolls back.
-      for (const index of [...activated.value]) deactivateFacade(index)
+      for (const url of [...activated.value]) deactivateFacade(url)
       return
     }
     parkAll()

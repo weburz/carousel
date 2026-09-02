@@ -1,4 +1,4 @@
-import { onScopeDispose, ref } from 'vue'
+import { onScopeDispose } from 'vue'
 
 interface YTPlayer {
   playVideo: () => void
@@ -76,7 +76,6 @@ interface RegisterOptions {
 
 export const useYouTubePlayer = () => {
   const players = new Map<HTMLElement, YTPlayer>()
-  const ready = ref(false)
 
   const register = async (
     element: HTMLElement,
@@ -84,7 +83,6 @@ export const useYouTubePlayer = () => {
     options: RegisterOptions = {},
   ): Promise<YTPlayer> => {
     await loadYouTubeAPI()
-    ready.value = true
 
     return new Promise<YTPlayer>((resolve) => {
       const player = new window.YT!.Player(element, {
@@ -148,7 +146,6 @@ export const useYouTubePlayer = () => {
   })
 
   return {
-    ready,
     register,
     unregister,
     play,

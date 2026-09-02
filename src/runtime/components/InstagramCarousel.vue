@@ -27,7 +27,7 @@
       >
         <div class="weburz-instagram-media">
           <iframe
-            :ref="(el: unknown) => bindIframe(el, index)"
+            :ref="(el: unknown) => bindIframe(el, post.url)"
             class="weburz-instagram-embed"
             :src="buildInstagramEmbedUrl(post.url)"
             :title="post.title ?? `Instagram post ${index + 1}`"
@@ -38,11 +38,11 @@
             allow="encrypted-media"
           />
           <button
-            v-if="tapToInteract && unlockedIndex !== index"
+            v-if="tapToInteract && unlockedPost !== post.url"
             type="button"
             class="weburz-instagram-overlay"
             :aria-label="`Interact with ${post.title ?? `Instagram post ${index + 1}`}`"
-            @click="unlock(index)"
+            @click="unlock(post.url)"
           />
         </div>
         <CarouselCaption
@@ -110,22 +110,26 @@ const activeCaption = computed(() => {
 // On scroll-back / swipe-back the original src is restored, which causes a brief
 // reload of the embed. Acceptable trade-off; opt out via prop if it bothers you.
 
-const { bind: bindIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
+// Keyed by URL (not slide index) so reordering the `posts` prop keeps
+// park/restore state attached to the right embed.
+const { bind: bindIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<string>()
 
 // Embla cancels the click that follows a drag, so dragging across the overlay
 // never accidentally unlocks a post.
-const unlockedIndex = ref<number | null>(null)
-const unlock = (index: number) => {
-  unlockedIndex.value = index
+const unlockedPost = ref<string | null>(null)
+const unlock = (url: string) => {
+  unlockedPost.value = url
 }
 
 const onSelect = (index: number) => {
   const previousIndex = activeIndex.value
   activeIndex.value = index
-  unlockedIndex.value = null
+  unlockedPost.value = null
   if (!props.pauseOnLeave) return
-  park(previousIndex)
-  restore(index)
+  const previous = props.posts[previousIndex]?.url
+  const current = props.posts[index]?.url
+  if (previous) park(previous)
+  if (current) restore(current)
 }
 
 useScrollAwayHandler(
