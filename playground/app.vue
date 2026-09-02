@@ -16,17 +16,10 @@
         :options="{ align: 'start' }"
         aria-label="CSS-var responsive carousel"
       >
-        <BaseSlide
-          v-for="slide in slides"
-          :key="slide.id"
-        >
-          <div
-            class="slide-card slide-card--tall"
-            :style="{ background: slide.color }"
-          >
-            {{ slide.label }}
-          </div>
-        </BaseSlide>
+        <DemoSlides
+          :slides="demoSlides"
+          size="tall"
+        />
       </BaseCarousel>
     </section>
 
@@ -180,17 +173,7 @@
           title="Themed carousel"
           description="Dots and arrows restyle themselves from the active theme's tokens."
         >
-          <BaseSlide
-            v-for="slide in slides"
-            :key="slide.id"
-          >
-            <div
-              class="slide-card"
-              :style="{ background: slide.color }"
-            >
-              {{ slide.label }}
-            </div>
-          </BaseSlide>
+          <DemoSlides :slides="demoSlides" />
         </BaseCarousel>
       </div>
     </section>
@@ -202,17 +185,7 @@
         title="Featured slides"
         description="The out-of-the-box look: plain chevrons either side of the dots."
       >
-        <BaseSlide
-          v-for="slide in slides"
-          :key="slide.id"
-        >
-          <div
-            class="slide-card"
-            :style="{ background: slide.color }"
-          >
-            {{ slide.label }}
-          </div>
-        </BaseSlide>
+        <DemoSlides :slides="demoSlides" />
       </BaseCarousel>
     </section>
 
@@ -223,17 +196,7 @@
         arrow-position="sides"
         aria-label="Side-arrows carousel"
       >
-        <BaseSlide
-          v-for="slide in slides"
-          :key="slide.id"
-        >
-          <div
-            class="slide-card"
-            :style="{ background: slide.color }"
-          >
-            {{ slide.label }}
-          </div>
-        </BaseSlide>
+        <DemoSlides :slides="demoSlides" />
       </BaseCarousel>
     </section>
 
@@ -248,17 +211,7 @@
         title="Aside layout"
         description="Title, description, arrows and dots live in the left column on larger frames."
       >
-        <BaseSlide
-          v-for="slide in slides"
-          :key="slide.id"
-        >
-          <div
-            class="slide-card"
-            :style="{ background: slide.color }"
-          >
-            {{ slide.label }}
-          </div>
-        </BaseSlide>
+        <DemoSlides :slides="demoSlides" />
       </BaseCarousel>
     </section>
 
@@ -271,17 +224,7 @@
         title="Aside on the right"
         description="Same aside layout, mirrored: the carousel leads and the text column follows."
       >
-        <BaseSlide
-          v-for="slide in slides"
-          :key="slide.id"
-        >
-          <div
-            class="slide-card"
-            :style="{ background: slide.color }"
-          >
-            {{ slide.label }}
-          </div>
-        </BaseSlide>
+        <DemoSlides :slides="demoSlides" />
       </BaseCarousel>
     </section>
 
@@ -292,17 +235,7 @@
         :slides-per-view="2"
         aria-label="Two-up looped carousel"
       >
-        <BaseSlide
-          v-for="slide in slides"
-          :key="slide.id"
-        >
-          <div
-            class="slide-card"
-            :style="{ background: slide.color }"
-          >
-            {{ slide.label }}
-          </div>
-        </BaseSlide>
+        <DemoSlides :slides="demoSlides" />
       </BaseCarousel>
     </section>
 
@@ -332,33 +265,21 @@
           :show-arrows="false"
           aria-label="Dots-only carousel"
         >
-          <BaseSlide
-            v-for="slide in slides"
-            :key="slide.id"
-          >
-            <div
-              class="slide-card slide-card--short"
-              :style="{ background: slide.color }"
-            >
-              {{ slide.label }} (dots only)
-            </div>
-          </BaseSlide>
+          <DemoSlides
+            :slides="demoSlides"
+            size="short"
+            suffix=" (dots only)"
+          />
         </BaseCarousel>
         <BaseCarousel
           :show-dots="false"
           aria-label="Arrows-only carousel"
         >
-          <BaseSlide
-            v-for="slide in slides"
-            :key="slide.id"
-          >
-            <div
-              class="slide-card slide-card--short"
-              :style="{ background: slide.color }"
-            >
-              {{ slide.label }} (arrows only)
-            </div>
-          </BaseSlide>
+          <DemoSlides
+            :slides="demoSlides"
+            size="short"
+            suffix=" (arrows only)"
+          />
         </BaseCarousel>
       </div>
     </section>
@@ -372,6 +293,7 @@ import type {
   TikTokVideo,
   YouTubeVideo,
 } from '../src/runtime/types'
+import { demoSlides } from './utils/demoSlides'
 
 const themes = ['light', 'dark', 'neutral'] as const
 const demoTheme = ref<(typeof themes)[number]>('light')
@@ -379,14 +301,6 @@ const cycleTheme = () => {
   const next = (themes.indexOf(demoTheme.value) + 1) % themes.length
   demoTheme.value = themes[next]!
 }
-
-const slides = [
-  { id: 1, label: 'Slide 1', color: '#0a7' },
-  { id: 2, label: 'Slide 2', color: '#07a' },
-  { id: 3, label: 'Slide 3', color: '#a07' },
-  { id: 4, label: 'Slide 4', color: '#a70' },
-  { id: 5, label: 'Slide 5', color: '#70a' },
-]
 
 const ytVideos: YouTubeVideo[] = [
   {
