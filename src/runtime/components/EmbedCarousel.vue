@@ -45,20 +45,17 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { CarouselSharedProps, CaptionsMode, SlideCaption } from '../types'
-import { carouselSharedDefaults, pickCarouselSharedProps } from '../utils/carouselProps'
+import type { PropType } from 'vue'
+import type { CaptionsMode, SlideCaption } from '../types'
+import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import BaseCarousel from './BaseCarousel.vue'
 import CarouselCaption from './CarouselCaption.vue'
 
-interface Props extends CarouselSharedProps {
-  captions: CaptionsMode
-  activeIndex: number
-  activeCaption?: SlideCaption
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  ...carouselSharedDefaults,
-  activeCaption: undefined,
+const props = defineProps({
+  ...carouselSharedProps,
+  captions: { type: String as PropType<CaptionsMode>, required: true },
+  activeIndex: { type: Number, required: true },
+  activeCaption: { type: Object as PropType<SlideCaption>, default: undefined },
 })
 
 const emit = defineEmits<{

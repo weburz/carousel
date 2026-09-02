@@ -79,8 +79,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import type { PropType } from 'vue'
 import type {
-  CarouselSharedProps,
   CaptionsMode,
   SlideCaption,
   YouTubeCarouselMode,
@@ -90,36 +90,26 @@ import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { useYouTubeMedia } from '../composables/useYouTubeMedia'
 import { youtubeWatchUrl } from '../utils/embeds'
-import { carouselSharedDefaults, pickCarouselSharedProps } from '../utils/carouselProps'
+import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import CarouselCaption from './CarouselCaption.vue'
 import EmbedCarousel from './EmbedCarousel.vue'
 import EmbedFacade from './EmbedFacade.vue'
 
-interface Props extends CarouselSharedProps {
-  videos: YouTubeVideo[]
-  mode?: YouTubeCarouselMode
-  nocookie?: boolean
-  autoplayOnScroll?: boolean
-  pauseOnLeave?: boolean
-  onScrollAway?: 'mute' | 'pause' | 'none'
+const props = defineProps({
+  ...carouselSharedProps,
+  videos: { type: Array as PropType<YouTubeVideo[]>, required: true },
+  mode: { type: String as PropType<YouTubeCarouselMode>, default: 'facade' },
+  nocookie: { type: Boolean, default: true },
+  autoplayOnScroll: { type: Boolean, default: false },
+  pauseOnLeave: { type: Boolean, default: true },
+  onScrollAway: { type: String as PropType<'mute' | 'pause' | 'none'>, default: 'mute' },
   /**
    * Per-item text display: under every slide ('per-slide'), one heading-area
    * block showing the active slide's title/description ('active'), or none.
    * Carousel-level `title`/`description` props are independent of this.
    */
-  captions?: CaptionsMode
-  fetchMetadata?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  ...carouselSharedDefaults,
-  mode: 'facade',
-  nocookie: true,
-  autoplayOnScroll: false,
-  pauseOnLeave: true,
-  onScrollAway: 'mute',
-  captions: 'per-slide',
-  fetchMetadata: true,
+  captions: { type: String as PropType<CaptionsMode>, default: 'per-slide' },
+  fetchMetadata: { type: Boolean, default: true },
 })
 
 const sharedProps = computed(() => pickCarouselSharedProps(props))

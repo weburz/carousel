@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { carouselSharedDefaults, pickCarouselSharedProps } from '../src/runtime/utils/carouselProps'
+import { carouselSharedProps, pickCarouselSharedProps } from '../src/runtime/utils/carouselProps'
 
 describe('pickCarouselSharedProps', () => {
   it('returns only the shared keys, dropping platform-specific ones', () => {
@@ -36,7 +36,7 @@ describe('pickCarouselSharedProps', () => {
   })
 })
 
-describe('carouselSharedDefaults', () => {
+describe('carouselSharedProps', () => {
   it('has the same keys as a picked CarouselSharedProps object', () => {
     const picked = pickCarouselSharedProps({
       options: {},
@@ -52,8 +52,16 @@ describe('carouselSharedDefaults', () => {
       ariaLabel: undefined,
     })
 
-    expect(Object.keys(carouselSharedDefaults).sort()).toEqual(
+    expect(Object.keys(carouselSharedProps).sort()).toEqual(
       Object.keys(picked).sort(),
     )
+  })
+
+  it('every shared prop either has a default or is a Boolean, so none is silently required', () => {
+    for (const [key, definition] of Object.entries(carouselSharedProps)) {
+      const isBoolean = definition.type === Boolean
+      const hasDefault = 'default' in definition
+      expect(isBoolean || hasDefault, `${key} must have a default or be a Boolean`).toBe(true)
+    }
   })
 })

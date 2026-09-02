@@ -16,6 +16,10 @@ internal `EmbedCarousel` shell (prop/slot forwarding, active caption) and
   `pnpm test:types`** on a fresh checkout: the root tsconfig extends the
   generated `.nuxt/tsconfig.json`, and a stale one produces false type errors.
 - `pnpm dev` — run the playground.
+- `pnpm prepack && pnpm dev:build` — builds the playground against the real
+  `dist/` output (not the stubbed module). Must pass before a release: it is
+  the only check that catches module-builder bugs that only manifest in the
+  published output (e.g. a dropped runtime helper import).
 
 ### pnpm 11 notes
 
@@ -37,9 +41,11 @@ internal `EmbedCarousel` shell (prop/slot forwarding, active caption) and
   (`useFacadeActivation`), never `useVerbX`.
 - **`Intl.DateTimeFormat`** instantiated once and reused — never repeated
   `toLocaleDateString()`.
-- **Widen contracts, don't coerce**: keep `SlidesPerView` and shared props
-  (options/plugins/slidesPerView/layout/…) compound in
-  `src/runtime/types.ts`; extend them, don't redeclare per component.
+- **Widen contracts, don't coerce**: shared props (options/plugins/
+  slidesPerView/layout/…) live as the runtime `carouselSharedProps` object in
+  `src/runtime/utils/carouselProps.ts` — spread it into `defineProps`, never
+  re-declare per component, and never `withDefaults` with a non-literal (the
+  module builder drops the `mergeDefaults` import from the built component).
 - No token auth/tracking params leak into embed URLs; keep the query-stripping
   and keyless-thumbnail behavior intact when touching `buildEmbedUrl` or
   thumbnail fallbacks.

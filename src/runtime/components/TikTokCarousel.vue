@@ -75,8 +75,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import type { PropType } from 'vue'
 import type {
-  CarouselSharedProps,
   CaptionsMode,
   SlideCaption,
   TikTokCarouselMode,
@@ -87,37 +87,29 @@ import { useFacadeActivation } from '../composables/useFacadeActivation'
 import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { buildTikTokEmbedUrl } from '../utils/embeds'
-import { carouselSharedDefaults, pickCarouselSharedProps } from '../utils/carouselProps'
+import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import CarouselCaption from './CarouselCaption.vue'
 import EmbedCarousel from './EmbedCarousel.vue'
 import EmbedFacade from './EmbedFacade.vue'
 
-interface Props extends CarouselSharedProps {
-  videos: TikTokVideo[]
-  mode?: TikTokCarouselMode
-  pauseOnLeave?: boolean
-  onScrollAway?: 'pause' | 'none'
+const props = defineProps({
+  ...carouselSharedProps,
+  videos: { type: Array as PropType<TikTokVideo[]>, required: true },
+  mode: { type: String as PropType<TikTokCarouselMode>, default: 'facade' },
+  pauseOnLeave: { type: Boolean, default: true },
+  // TikTok's /embed/v2/ iframe does not respond to any documented postMessage
+  // protocol from outside the frame. The only way to halt playback is iframe.src
+  // nuke, which causes a reload on scroll-back. Default to "pause" because
+  // stopping playback is more important than avoiding the reload flicker.
+  onScrollAway: { type: String as PropType<'pause' | 'none'>, default: 'pause' },
   /**
    * Per-item text display: 'none' by default since TikTok's embed already
    * shows the post caption, author, and music inside the iframe. 'active'
    * shows the active video's title in the heading area instead; 'per-slide'
    * puts it under each slide.
    */
-  captions?: CaptionsMode
-  fetchMetadata?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  ...carouselSharedDefaults,
-  mode: 'facade',
-  pauseOnLeave: true,
-  // TikTok's /embed/v2/ iframe does not respond to any documented postMessage
-  // protocol from outside the frame. The only way to halt playback is iframe.src
-  // nuke, which causes a reload on scroll-back. Default to "pause" because
-  // stopping playback is more important than avoiding the reload flicker.
-  onScrollAway: 'pause',
-  captions: 'none',
-  fetchMetadata: true,
+  captions: { type: String as PropType<CaptionsMode>, default: 'none' },
+  fetchMetadata: { type: Boolean, default: true },
 })
 
 const sharedProps = computed(() => pickCarouselSharedProps(props))

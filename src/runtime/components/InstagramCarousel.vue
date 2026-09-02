@@ -56,18 +56,24 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { CarouselSharedProps, CaptionsMode, InstagramPost, SlideCaption } from '../types'
+import type { PropType } from 'vue'
+import type { CaptionsMode, InstagramPost, SlideCaption } from '../types'
 import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { buildInstagramEmbedUrl } from '../utils/embeds'
-import { carouselSharedDefaults, pickCarouselSharedProps } from '../utils/carouselProps'
+import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import CarouselCaption from './CarouselCaption.vue'
 import EmbedCarousel from './EmbedCarousel.vue'
 
-interface Props extends CarouselSharedProps {
-  posts: InstagramPost[]
-  pauseOnLeave?: boolean
-  onScrollAway?: 'pause' | 'none'
+const props = defineProps({
+  ...carouselSharedProps,
+  posts: { type: Array as PropType<InstagramPost[]>, required: true },
+  pauseOnLeave: { type: Boolean, default: true },
+  // Instagram has no postMessage control API. The only way to halt a reel is
+  // to unload the iframe (about:blank), which forces it to reload when the user
+  // scrolls back into view. Default to "pause" because "audio keeps playing
+  // while user scrolls elsewhere" is a worse UX than "video restarts on return".
+  onScrollAway: { type: String as PropType<'pause' | 'none'>, default: 'pause' },
   /**
    * Cover each embed with a transparent layer so touch-drags reach the
    * carousel instead of dying inside Instagram's cross-origin iframe (touches
@@ -75,26 +81,14 @@ interface Props extends CarouselSharedProps {
    * cannot be hand-swiped on mobile). Tapping the layer unlocks the post for
    * interaction; it locks again when the active slide changes.
    */
-  tapToInteract?: boolean
+  tapToInteract: { type: Boolean, default: true },
   /**
    * Per-item text display: under every slide ('per-slide'), one heading-area
    * block showing the active slide's title/description ('active'), or none.
    * Text comes from `posts[].title` / `posts[].description` only — Instagram
    * has no public metadata API to auto-fetch from.
    */
-  captions?: CaptionsMode
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  ...carouselSharedDefaults,
-  pauseOnLeave: true,
-  // Instagram has no postMessage control API. The only way to halt a reel is
-  // to unload the iframe (about:blank), which forces it to reload when the user
-  // scrolls back into view. Default to "pause" because "audio keeps playing
-  // while user scrolls elsewhere" is a worse UX than "video restarts on return".
-  onScrollAway: 'pause',
-  tapToInteract: true,
-  captions: 'per-slide',
+  captions: { type: String as PropType<CaptionsMode>, default: 'per-slide' },
 })
 
 const sharedProps = computed(() => pickCarouselSharedProps(props))
