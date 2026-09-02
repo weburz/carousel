@@ -112,74 +112,38 @@ export const useYouTubePlayer = () => {
     })
   }
 
+  // Every control call goes through here: the player may not be ready yet
+  // (still loading) or may already be torn down, and either throws.
+  const invoke = (player: YTPlayer | undefined, method: 'playVideo' | 'pauseVideo' | 'mute' | 'unMute' | 'destroy') => {
+    try {
+      player?.[method]()
+    }
+    catch {
+      // player not ready yet, or already torn down
+    }
+  }
+
   const unregister = (element: HTMLElement) => {
     const player = players.get(element)
     if (!player) return
-    try {
-      player.destroy()
-    }
-    catch {
-      // player may already be torn down
-    }
+    invoke(player, 'destroy')
     players.delete(element)
   }
 
-  const play = (element: HTMLElement) => {
-    try {
-      players.get(element)?.playVideo()
-    }
-    catch {
-      // player not ready yet — caller can retry on next tick
-    }
-  }
+  const play = (element: HTMLElement) => invoke(players.get(element), 'playVideo')
 
-  const pause = (element: HTMLElement) => {
-    try {
-      players.get(element)?.pauseVideo()
-    }
-    catch {
-      // player not ready yet
-    }
-  }
+  const pause = (element: HTMLElement) => invoke(players.get(element), 'pauseVideo')
 
   const pauseAll = () => {
-    players.forEach((p) => {
-      try {
-        p.pauseVideo()
-      }
-      catch {
-        // player not ready
-      }
-    })
+    players.forEach(p => invoke(p, 'pauseVideo'))
   }
 
-  const mute = (element: HTMLElement) => {
-    try {
-      players.get(element)?.mute()
-    }
-    catch {
-      // player not ready
-    }
-  }
+  const mute = (element: HTMLElement) => invoke(players.get(element), 'mute')
 
-  const unmute = (element: HTMLElement) => {
-    try {
-      players.get(element)?.unMute()
-    }
-    catch {
-      // player not ready
-    }
-  }
+  const unmute = (element: HTMLElement) => invoke(players.get(element), 'unMute')
 
   onScopeDispose(() => {
-    players.forEach((p) => {
-      try {
-        p.destroy()
-      }
-      catch {
-        // already destroyed
-      }
-    })
+    players.forEach(p => invoke(p, 'destroy'))
     players.clear()
   })
 

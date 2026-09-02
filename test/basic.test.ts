@@ -160,4 +160,11 @@ describe('@weburz/carousel', async () => {
     expect(html).toContain('class="weburz-tiktok-embed"')
     expect(html).toContain('https://www.tiktok.com/embed/v2/1234567890')
   })
+
+  it('forwards heading and arrow icon slots through the platform wrappers', async () => {
+    const html = await $fetch('/')
+    expect(html).toContain('Forwarded heading slot')
+    expect(html).toContain('PREV-ICON')
+    expect(html).toContain('NEXT-ICON')
+  })
 })

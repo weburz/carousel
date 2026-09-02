@@ -3,77 +3,44 @@
     ref="rootEl"
     class="weburz-tiktok-carousel"
   >
-    <BaseCarousel
-      :options="options"
-      :plugins="plugins"
-      :slides-per-view="slidesPerView"
-      :show-arrows="showArrows"
-      :show-dots="showDots"
-      :arrow-position="arrowPosition"
-      :layout="layout"
-      :aside-position="asidePosition"
-      :title="title"
-      :description="description"
-      :aria-label="ariaLabel"
+    <EmbedCarousel
+      v-bind="sharedProps"
+      :captions="captions"
+      :active-index="activeIndex"
+      :active-caption="activeCaption"
       @select="onSelect"
     >
+      <!-- Forward every named slot (heading, prevIcon, nextIcon) untouched;
+           the default slot is the slides below. -->
       <template
-        v-if="$slots.heading || captions === 'active'"
-        #heading="headingProps"
+        v-for="name in Object.keys($slots).filter(slot => slot !== 'default')"
+        #[name]="slotProps"
       >
         <slot
-          name="heading"
-          v-bind="headingProps"
-        >
-          <CarouselActiveCaption
-            :active-key="activeIndex"
-            :title="activeTitle"
-            :href="activeHref"
-            :description="activeDescription"
-          />
-        </slot>
-      </template>
-      <template
-        v-if="$slots.prevIcon"
-        #prevIcon
-      >
-        <slot name="prevIcon" />
-      </template>
-      <template
-        v-if="$slots.nextIcon"
-        #nextIcon
-      >
-        <slot name="nextIcon" />
+          :name="name"
+          v-bind="slotProps"
+        />
       </template>
       <BaseSlide
         v-for="(video, index) in videos"
         :key="video.url"
       >
-        <button
+        <EmbedFacade
           v-if="mode === 'facade' && !isActivated(index)"
-          type="button"
           class="weburz-tiktok-embed weburz-tiktok-facade"
-          :aria-label="`Play ${captionTitle(video) ?? `TikTok video ${index + 1}`}`"
-          @click="activate(index)"
+          :label="`Play ${captionTitle(video) ?? `TikTok video ${index + 1}`}`"
+          :thumbnail="thumbUrl(video)"
+          :alt="captionTitle(video) ?? ''"
+          @activate="activate(index)"
         >
-          <img
-            v-if="thumbUrl(video)"
-            class="weburz-tiktok-facade__thumb"
-            :src="thumbUrl(video)"
-            :alt="captionTitle(video) ?? ''"
-            loading="lazy"
-          >
-          <span
-            class="weburz-tiktok-facade__play"
-            aria-hidden="true"
-          >
+          <template #icon>
             <svg
               viewBox="0 0 48 48"
               width="48"
               height="48"
             >
               <circle
-                class="weburz-tiktok-facade__play-bg"
+                fill="currentColor"
                 cx="24"
                 cy="24"
                 r="24"
@@ -83,13 +50,13 @@
                 fill="#fff"
               />
             </svg>
-          </span>
-        </button>
+          </template>
+        </EmbedFacade>
         <iframe
           v-else
           :ref="(el: unknown) => bindIframe(el, index)"
           class="weburz-tiktok-embed"
-          :src="embedUrl(video.url)"
+          :src="buildTikTokEmbedUrl(video.url)"
           :title="captionTitle(video) ?? `TikTok video ${index + 1}`"
           loading="lazy"
           frameborder="0"
@@ -99,19 +66,19 @@
         />
         <CarouselCaption
           v-if="captions === 'per-slide' && (captionTitle(video) || video.description)"
-          :title="captionTitle(video)"
-          :href="video.url"
-          :description="video.description"
+          v-bind="slideCaption(video)"
         />
       </BaseSlide>
-    </BaseCarousel>
+    </EmbedCarousel>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import type { PropType } from 'vue'
 import type {
-  CarouselSharedProps,
+  CaptionsMode,
+  SlideCaption,
   TikTokCarouselMode,
   TikTokVideo,
 } from '../types'
@@ -120,46 +87,32 @@ import { useFacadeActivation } from '../composables/useFacadeActivation'
 import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { buildTikTokEmbedUrl } from '../utils/embeds'
-import CarouselActiveCaption from './CarouselActiveCaption.vue'
+import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import CarouselCaption from './CarouselCaption.vue'
+import EmbedCarousel from './EmbedCarousel.vue'
+import EmbedFacade from './EmbedFacade.vue'
 
-interface Props extends CarouselSharedProps {
-  videos: TikTokVideo[]
-  mode?: TikTokCarouselMode
-  pauseOnLeave?: boolean
-  onScrollAway?: 'pause' | 'none'
+const props = defineProps({
+  ...carouselSharedProps,
+  videos: { type: Array as PropType<TikTokVideo[]>, required: true },
+  mode: { type: String as PropType<TikTokCarouselMode>, default: 'facade' },
+  pauseOnLeave: { type: Boolean, default: true },
+  // TikTok's /embed/v2/ iframe does not respond to any documented postMessage
+  // protocol from outside the frame. The only way to halt playback is iframe.src
+  // nuke, which causes a reload on scroll-back. Default to "pause" because
+  // stopping playback is more important than avoiding the reload flicker.
+  onScrollAway: { type: String as PropType<'pause' | 'none'>, default: 'pause' },
   /**
    * Per-item text display: 'none' by default since TikTok's embed already
    * shows the post caption, author, and music inside the iframe. 'active'
    * shows the active video's title in the heading area instead; 'per-slide'
    * puts it under each slide.
    */
-  captions?: 'none' | 'per-slide' | 'active'
-  fetchMetadata?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  mode: 'facade',
-  pauseOnLeave: true,
-  // TikTok's /embed/v2/ iframe does not respond to any documented postMessage
-  // protocol from outside the frame. The only way to halt playback is iframe.src
-  // nuke, which causes a reload on scroll-back. Default to "pause" because
-  // stopping playback is more important than avoiding the reload flicker.
-  onScrollAway: 'pause',
-  captions: 'none',
-  fetchMetadata: true,
-  options: () => ({}),
-  plugins: () => [],
-  slidesPerView: 1,
-  showArrows: true,
-  showDots: true,
-  arrowPosition: 'below',
-  layout: 'stacked',
-  asidePosition: 'left',
-  title: undefined,
-  description: undefined,
-  ariaLabel: undefined,
+  captions: { type: String as PropType<CaptionsMode>, default: 'none' },
+  fetchMetadata: { type: Boolean, default: true },
 })
+
+const sharedProps = computed(() => pickCarouselSharedProps(props))
 
 const { forTikTok } = useEmbedMetadata()
 const fetchedTitles = ref<Record<string, string>>({})
@@ -171,9 +124,13 @@ const captionTitle = (video: TikTokVideo) =>
 const thumbUrl = (video: TikTokVideo) =>
   video.thumbnail ?? fetchedThumbs.value[video.url]
 
-const embedUrl = (url: string) => buildTikTokEmbedUrl(url)
+const slideCaption = (video: TikTokVideo): SlideCaption => ({
+  title: captionTitle(video),
+  href: video.url,
+  description: video.description,
+})
 
-onMounted(() => {
+const fetchMissingMetadata = () => {
   // `fetchMetadata` governs optional caption titles only. Facade thumbnails
   // are NOT optional metadata — without one the facade is a blank box — so
   // they're fetched whenever facade mode needs them, regardless of the flag.
@@ -189,16 +146,16 @@ onMounted(() => {
       if (meta?.thumbnailUrl) fetchedThumbs.value[video.url] = meta.thumbnailUrl
     })
   }
-})
+}
+
+if (import.meta.client) watch(() => props.videos, fetchMissingMetadata, { immediate: true })
 
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
-const activeVideo = computed(() => props.videos[activeIndex.value])
-const activeTitle = computed(() =>
-  activeVideo.value ? captionTitle(activeVideo.value) : undefined,
-)
-const activeHref = computed(() => activeVideo.value?.url)
-const activeDescription = computed(() => activeVideo.value?.description)
+const activeCaption = computed(() => {
+  const video = props.videos[activeIndex.value]
+  return video ? slideCaption(video) : undefined
+})
 
 const { activated, isActivated, activate, deactivate } = useFacadeActivation<number>()
 const { bind: bindIframe, remove: removeIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
@@ -266,55 +223,21 @@ useScrollAwayHandler(
 /* Facade: shares the embed's box (same class) so swapping in the iframe
    causes no layout shift. Being a regular element instead of a cross-origin
    iframe, it keeps touches on the page — Embla drags work — and defers
-   TikTok's player until the user taps. */
-.weburz-tiktok-facade {
-  position: relative;
+   TikTok's player until the user taps.
+   Both classes together (rather than one) so this deterministically beats
+   both .weburz-tiktok-embed and EmbedFacade's .weburz-facade — equal
+   single-class specificity would be injection-order dependent. */
+.weburz-tiktok-embed.weburz-tiktok-facade {
   /* The button's children are absolutely positioned, so unlike the iframe
      (intrinsic 300px) it has ZERO intrinsic width — in an auto-sized flex or
      grid track the whole carousel collapses to its nav row's width. Claim the
      embed card's width explicitly; max-width still lets narrow slides shrink
-     it (this declaration wins over the embed class's width: 100% by source
-     order). */
+     it. */
   width: var(--weburz-tiktok-max-width, 20.3125rem);
   max-width: 100%;
-  padding: 0;
-  cursor: pointer;
-  overflow: hidden;
   background: var(--weburz-tiktok-facade-bg, #000);
-}
-
-.weburz-tiktok-facade__thumb {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.weburz-tiktok-facade__play {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: block;
-  width: var(--weburz-tiktok-play-size, 3.5rem);
-  pointer-events: none;
-}
-
-.weburz-tiktok-facade__play svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 0.4));
-}
-
-.weburz-tiktok-facade__play-bg {
-  fill: var(--weburz-tiktok-play-bg, rgb(0 0 0 / 0.7));
-  transition: fill 0.15s ease;
-}
-
-.weburz-tiktok-facade:hover .weburz-tiktok-facade__play-bg,
-.weburz-tiktok-facade:focus-visible .weburz-tiktok-facade__play-bg {
-  fill: var(--weburz-tiktok-play-bg-hover, #fe2c55);
+  --weburz-facade-play-size: var(--weburz-tiktok-play-size, 3.5rem);
+  --weburz-facade-play-bg: var(--weburz-tiktok-play-bg, rgb(0 0 0 / 0.7));
+  --weburz-facade-play-bg-hover: var(--weburz-tiktok-play-bg-hover, #fe2c55);
 }
 </style>

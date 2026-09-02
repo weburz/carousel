@@ -49,3 +49,6 @@ jobs:
 
       - name: Build
         run: pnpm prepack
+
+      - name: Build playground against dist
+        run: pnpm dev:build
