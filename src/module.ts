@@ -26,60 +26,39 @@ export default defineNuxtModule<ModuleOptions>({
     prefix: '',
   },
 
-  setup(options, _nuxt) {
+  setup(options) {
     const resolver = createResolver(import.meta.url)
     const prefix = options.prefix ?? ''
 
-    addComponent({
-      name: `${prefix}BaseCarousel`,
-      filePath: resolver.resolve('./runtime/components/BaseCarousel.vue'),
-    })
+    const components = [
+      'BaseCarousel',
+      'BaseSlide',
+      'YouTubeCarousel',
+      'InstagramCarousel',
+      'TikTokCarousel',
+    ]
 
-    addComponent({
-      name: `${prefix}BaseSlide`,
-      filePath: resolver.resolve('./runtime/components/BaseSlide.vue'),
-    })
+    for (const name of components) {
+      addComponent({
+        name: `${prefix}${name}`,
+        filePath: resolver.resolve(`./runtime/components/${name}.vue`),
+      })
+    }
 
-    addComponent({
-      name: `${prefix}YouTubeCarousel`,
-      filePath: resolver.resolve('./runtime/components/YouTubeCarousel.vue'),
-    })
+    const composables = [
+      'useCarousel',
+      'useYouTubePlayer',
+      'useYouTubeMedia',
+      'useEmbedMetadata',
+      'useFacadeActivation',
+      'useFrameRegistry',
+    ]
 
-    addComponent({
-      name: `${prefix}InstagramCarousel`,
-      filePath: resolver.resolve('./runtime/components/InstagramCarousel.vue'),
-    })
-
-    addComponent({
-      name: `${prefix}TikTokCarousel`,
-      filePath: resolver.resolve('./runtime/components/TikTokCarousel.vue'),
-    })
-
-    addImports([
-      {
-        name: 'useCarousel',
-        from: resolver.resolve('./runtime/composables/useCarousel'),
-      },
-      {
-        name: 'useYouTubePlayer',
-        from: resolver.resolve('./runtime/composables/useYouTubePlayer'),
-      },
-      {
-        name: 'useYouTubeMedia',
-        from: resolver.resolve('./runtime/composables/useYouTubeMedia'),
-      },
-      {
-        name: 'useEmbedMetadata',
-        from: resolver.resolve('./runtime/composables/useEmbedMetadata'),
-      },
-      {
-        name: 'useFacadeActivation',
-        from: resolver.resolve('./runtime/composables/useFacadeActivation'),
-      },
-      {
-        name: 'useFrameRegistry',
-        from: resolver.resolve('./runtime/composables/useFrameRegistry'),
-      },
-    ])
+    addImports(
+      composables.map(name => ({
+        name,
+        from: resolver.resolve(`./runtime/composables/${name}`),
+      })),
+    )
   },
 })

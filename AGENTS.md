@@ -2,7 +2,10 @@
 
 Nuxt 4 module: carousel components for YouTube, Instagram, and TikTok embeds
 built on Embla. Three platform wrappers (`YouTubeCarousel`, `TikTokCarousel`,
-`InstagramCarousel`) share one `BaseCarousel`/`BaseSlide` core.
+`InstagramCarousel`) share one `BaseCarousel`/`BaseSlide` core through the
+internal `EmbedCarousel` shell (prop/slot forwarding, active caption) and
+`EmbedFacade` (thumbnail play button). Shared prop defaults live in
+`src/runtime/utils/carouselProps.ts` — spread them, don't retype them.
 
 ## Commands (pnpm, never npm/yarn)
 

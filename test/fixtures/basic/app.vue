@@ -74,6 +74,22 @@
       :videos="ttVideos"
       aria-label="Facade TikTok carousel"
     />
+
+    <YouTubeCarousel
+      :videos="ytVideos"
+      :fetch-metadata="false"
+      aria-label="Slot forwarding test"
+    >
+      <template #heading>
+        Forwarded heading slot
+      </template>
+      <template #prevIcon>
+        PREV-ICON
+      </template>
+      <template #nextIcon>
+        NEXT-ICON
+      </template>
+    </YouTubeCarousel>
   </div>
 </template>
 

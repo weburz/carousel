@@ -36,6 +36,19 @@ export interface CarouselSharedProps {
 // `asidePosition` is only valid when `layout: 'aside'`.
 export type AsidePosition = 'left' | 'right'
 
+/**
+ * Per-item text display: under every slide ('per-slide'), one heading-area
+ * block showing the active slide's caption ('active'), or none.
+ */
+export type CaptionsMode = 'none' | 'per-slide' | 'active'
+
+/** Text block for one slide: rendered under it ('per-slide') or in the heading area ('active'). */
+export interface SlideCaption {
+  title?: string
+  href?: string
+  description?: string
+}
+
 export interface YouTubeVideo {
   id: string
   kind?: 'video' | 'shorts'

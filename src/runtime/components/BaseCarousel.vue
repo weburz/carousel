@@ -136,23 +136,12 @@
 import { computed, onMounted, provide, useId, watch } from 'vue'
 import { useCarousel } from '../composables/useCarousel'
 import { buildSlidesCss, resolveBaseSlides } from '../utils/slides'
+import { carouselSharedDefaults } from '../utils/carouselProps'
 import type { CarouselSharedProps } from '../types'
 
 type Props = CarouselSharedProps
 
-const props = withDefaults(defineProps<Props>(), {
-  options: () => ({}),
-  plugins: () => [],
-  slidesPerView: 1,
-  showArrows: true,
-  showDots: true,
-  arrowPosition: 'below',
-  layout: 'stacked',
-  asidePosition: 'left',
-  title: undefined,
-  description: undefined,
-  ariaLabel: undefined,
-})
+const props = withDefaults(defineProps<Props>(), { ...carouselSharedDefaults })
 
 const emit = defineEmits<{
   select: [index: number]
