@@ -1,40 +1,21 @@
-import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-
-/**
- * Presentation surface shared by BaseCarousel and every platform wrapper.
- * Compound on purpose — wrappers extend this instead of redeclaring the
- * ten forwarding props in each of the four components.
- *
- * `options`/`plugins` pass through to Embla; `slidesPerView`/`layout` and
- * friends only shape the chrome around the viewport.
- */
-export interface CarouselSharedProps {
-  /** Embla options passed through live (the prop is watched, not captured). */
-  options?: EmblaOptionsType
-  /** Embla plugins, passed through live the same way. */
-  plugins?: EmblaPluginType[]
-  /** Slides visible at once — a plain number or an SSR-safe breakpoint map. */
-  slidesPerView?: SlidesPerView
-  /** Render prev/next arrows. Hidden automatically for a single-snap carousel. */
-  showArrows?: boolean
-  /** Render dot navigation. */
-  showDots?: boolean
-  /** Where the arrows sit: flanking the dots ('below') or beside the stage ('sides'). */
-  arrowPosition?: 'sides' | 'below'
-  /** 'stacked' (column) or 'aside' (heading+nav in a side column on wide frames). */
-  layout?: 'stacked' | 'aside'
-  /** Which side the aside column sits on. */
-  asidePosition?: AsidePosition
-  /** Heading title. Also the accessible name when `ariaLabel` is omitted. */
-  title?: string
-  /** Heading description rendered under the title. */
-  description?: string
-  /** Accessible name for the carousel region, overriding the title fallback. */
-  ariaLabel?: string
-}
+/** The shared subset of a wrapper's props — types AND defaults live in `carouselSharedProps`. */
+export type { CarouselSharedProps } from './utils/carouselProps'
 
 // `asidePosition` is only valid when `layout: 'aside'`.
 export type AsidePosition = 'left' | 'right'
+
+/**
+ * Per-item text display: under every slide ('per-slide'), one heading-area
+ * block showing the active slide's caption ('active'), or none.
+ */
+export type CaptionsMode = 'none' | 'per-slide' | 'active'
+
+/** Text block for one slide: rendered under it ('per-slide') or in the heading area ('active'). */
+export interface SlideCaption {
+  title?: string
+  href?: string
+  description?: string
+}
 
 export interface YouTubeVideo {
   id: string

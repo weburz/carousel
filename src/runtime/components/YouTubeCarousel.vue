@@ -3,78 +3,46 @@
     ref="rootEl"
     class="weburz-youtube-carousel"
   >
-    <BaseCarousel
-      :options="options"
-      :plugins="plugins"
-      :slides-per-view="slidesPerView"
-      :show-arrows="showArrows"
-      :show-dots="showDots"
-      :arrow-position="arrowPosition"
-      :layout="layout"
-      :aside-position="asidePosition"
-      :title="title"
-      :description="description"
-      :aria-label="ariaLabel"
+    <EmbedCarousel
+      v-bind="sharedProps"
+      :captions="captions"
+      :active-index="activeIndex"
+      :active-caption="activeCaption"
       @select="onSelect"
     >
+      <!-- Forward every named slot (heading, prevIcon, nextIcon) untouched;
+           the default slot is the slides below. -->
       <template
-        v-if="$slots.heading || captions === 'active'"
-        #heading="headingProps"
+        v-for="name in Object.keys($slots).filter(slot => slot !== 'default')"
+        #[name]="slotProps"
       >
         <slot
-          name="heading"
-          v-bind="headingProps"
-        >
-          <CarouselActiveCaption
-            :active-key="activeIndex"
-            :title="activeTitle"
-            :href="activeHref"
-            :description="activeDescription"
-          />
-        </slot>
-      </template>
-      <template
-        v-if="$slots.prevIcon"
-        #prevIcon
-      >
-        <slot name="prevIcon" />
-      </template>
-      <template
-        v-if="$slots.nextIcon"
-        #nextIcon
-      >
-        <slot name="nextIcon" />
+          :name="name"
+          v-bind="slotProps"
+        />
       </template>
       <BaseSlide
         v-for="video in videos"
         :key="video.id"
       >
         <div :class="['weburz-yt', `weburz-yt--${video.kind ?? 'video'}`]">
-          <button
+          <EmbedFacade
             v-if="isThumbnail(video)"
-            type="button"
             class="weburz-yt__facade"
-            :aria-label="`Play ${captionTitle(video) ?? `YouTube ${video.kind ?? 'video'}`}`"
-            @click="activateFacade(video)"
+            :label="`Play ${captionTitle(video) ?? `YouTube ${video.kind ?? 'video'}`}`"
+            :thumbnail="thumbnailUrl(video)"
+            :alt="captionTitle(video) ?? ''"
+            @activate="activateFacade(video)"
+            @thumbnail-error="onThumbnailError(video)"
           >
-            <img
-              class="weburz-yt__thumb"
-              :src="thumbnailUrl(video)"
-              :alt="captionTitle(video) ?? ''"
-              loading="lazy"
-              @error="onThumbnailError(video)"
-            >
-            <span
-              class="weburz-yt__play"
-              aria-hidden="true"
-            >
+            <template #icon>
               <svg
                 viewBox="0 0 68 48"
                 width="68"
                 height="48"
               >
                 <path
-                  class="weburz-yt__play-bg"
+                  fill="currentColor"
                   d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
                 />
                 <path
@@ -82,8 +50,8 @@
                   fill="#fff"
                 />
               </svg>
-            </span>
-          </button>
+            </template>
+          </EmbedFacade>
           <iframe
             v-else-if="mode !== 'player-api'"
             :ref="(el: unknown) => bindIframe(el, video)"
@@ -102,19 +70,19 @@
         </div>
         <CarouselCaption
           v-if="captions === 'per-slide' && (captionTitle(video) || video.description)"
-          :title="captionTitle(video)"
-          :href="captionHref(video)"
-          :description="video.description"
+          v-bind="slideCaption(video)"
         />
       </BaseSlide>
-    </BaseCarousel>
+    </EmbedCarousel>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import type { PropType } from 'vue'
 import type {
-  CarouselSharedProps,
+  CaptionsMode,
+  SlideCaption,
   YouTubeCarouselMode,
   YouTubeVideo,
 } from '../types'
@@ -122,45 +90,29 @@ import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { useYouTubeMedia } from '../composables/useYouTubeMedia'
 import { youtubeWatchUrl } from '../utils/embeds'
-import CarouselActiveCaption from './CarouselActiveCaption.vue'
+import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import CarouselCaption from './CarouselCaption.vue'
+import EmbedCarousel from './EmbedCarousel.vue'
+import EmbedFacade from './EmbedFacade.vue'
 
-interface Props extends CarouselSharedProps {
-  videos: YouTubeVideo[]
-  mode?: YouTubeCarouselMode
-  nocookie?: boolean
-  autoplayOnScroll?: boolean
-  pauseOnLeave?: boolean
-  onScrollAway?: 'mute' | 'pause' | 'none'
+const props = defineProps({
+  ...carouselSharedProps,
+  videos: { type: Array as PropType<YouTubeVideo[]>, required: true },
+  mode: { type: String as PropType<YouTubeCarouselMode>, default: 'facade' },
+  nocookie: { type: Boolean, default: true },
+  autoplayOnScroll: { type: Boolean, default: false },
+  pauseOnLeave: { type: Boolean, default: true },
+  onScrollAway: { type: String as PropType<'mute' | 'pause' | 'none'>, default: 'mute' },
   /**
    * Per-item text display: under every slide ('per-slide'), one heading-area
    * block showing the active slide's title/description ('active'), or none.
    * Carousel-level `title`/`description` props are independent of this.
    */
-  captions?: 'none' | 'per-slide' | 'active'
-  fetchMetadata?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  mode: 'facade',
-  nocookie: true,
-  autoplayOnScroll: false,
-  pauseOnLeave: true,
-  onScrollAway: 'mute',
-  captions: 'per-slide',
-  fetchMetadata: true,
-  options: () => ({}),
-  plugins: () => [],
-  slidesPerView: 1,
-  showArrows: true,
-  showDots: true,
-  arrowPosition: 'below',
-  layout: 'stacked',
-  asidePosition: 'left',
-  title: undefined,
-  description: undefined,
-  ariaLabel: undefined,
+  captions: { type: String as PropType<CaptionsMode>, default: 'per-slide' },
+  fetchMetadata: { type: Boolean, default: true },
 })
+
+const sharedProps = computed(() => pickCarouselSharedProps(props))
 
 const {
   embedUrl,
@@ -186,7 +138,13 @@ const captionTitle = (video: YouTubeVideo) =>
 const captionHref = (video: YouTubeVideo) =>
   youtubeWatchUrl(video.id, video.kind ?? 'video', video.url)
 
-onMounted(() => {
+const slideCaption = (video: YouTubeVideo): SlideCaption => ({
+  title: captionTitle(video),
+  href: captionHref(video),
+  description: video.description,
+})
+
+const fetchMissingMetadata = () => {
   if (!props.fetchMetadata || props.captions === 'none') return
   for (const video of props.videos) {
     if (video.title) continue
@@ -194,18 +152,16 @@ onMounted(() => {
       if (meta?.title) fetchedTitles.value[video.id] = meta.title
     })
   }
-})
+}
+
+if (import.meta.client) watch(() => props.videos, fetchMissingMetadata, { immediate: true })
 
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
-const activeVideo = computed(() => props.videos[activeIndex.value])
-const activeTitle = computed(() =>
-  activeVideo.value ? captionTitle(activeVideo.value) : undefined,
-)
-const activeHref = computed(() =>
-  activeVideo.value ? captionHref(activeVideo.value) : undefined,
-)
-const activeDescription = computed(() => activeVideo.value?.description)
+const activeCaption = computed(() => {
+  const video = props.videos[activeIndex.value]
+  return video ? slideCaption(video) : undefined
+})
 
 const onSelect = (index: number) => {
   const previousIndex = activeIndex.value
@@ -281,52 +237,11 @@ useScrollAwayHandler(
   display: block;
 }
 
-/* Facade: a plain thumbnail button until tapped. Being a regular element (not
-   a cross-origin iframe), it keeps touch events on the page — so Embla drags
-   work — and defers the heavy YouTube player until the user asks for it. */
+/* Facade: maps the public --weburz-yt-* tokens onto EmbedFacade's generic
+   --weburz-facade-* vars. */
 .weburz-yt__facade {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  background: #000;
-  cursor: pointer;
-}
-
-.weburz-yt__thumb {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.weburz-yt__play {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: block;
-  width: var(--weburz-yt-play-size, 4.25rem);
-  height: auto;
-  pointer-events: none;
-}
-
-.weburz-yt__play svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  filter: drop-shadow(0 1px 4px rgb(0 0 0 / 0.4));
-}
-
-.weburz-yt__play-bg {
-  fill: var(--weburz-yt-play-bg, rgb(0 0 0 / 0.7));
-  transition: fill 0.15s ease;
-}
-
-.weburz-yt__facade:hover .weburz-yt__play-bg,
-.weburz-yt__facade:focus-visible .weburz-yt__play-bg {
-  fill: var(--weburz-yt-play-bg-hover, #f03);
+  --weburz-facade-play-size: var(--weburz-yt-play-size, 4.25rem);
+  --weburz-facade-play-bg: var(--weburz-yt-play-bg, rgb(0 0 0 / 0.7));
+  --weburz-facade-play-bg-hover: var(--weburz-yt-play-bg-hover, #f03);
 }
 </style>

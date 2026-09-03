@@ -44,10 +44,10 @@ describe('@weburz/carousel', async () => {
 
   it('ships slidesPerView to CSS as a raw number', async () => {
     const html = await $fetch('/')
-    // The count reaches CSS via a v-bind variable so the slide width math
-    // happens in calc(), where --weburz-carousel-slides (settable from
+    // The count reaches CSS via an inline custom property so the slide width
+    // math happens in calc(), where --weburz-carousel-slides (settable from
     // consumer media queries) can override it SSR-correctly.
-    expect(html).toMatch(/--[\w-]+-slideCount:2/)
+    expect(html).toMatch(/--weburz-carousel-slide-count:\s*2/)
     // A precomputed width in the HTML would mean JS decided the slide size
     // again — the exact thing that caused the hydration width snap.
     expect(html).not.toMatch(/-flexBasis:/)
@@ -159,5 +159,12 @@ describe('@weburz/carousel', async () => {
     const html = await $fetch('/')
     expect(html).toContain('class="weburz-tiktok-embed"')
     expect(html).toContain('https://www.tiktok.com/embed/v2/1234567890')
+  })
+
+  it('forwards heading and arrow icon slots through the platform wrappers', async () => {
+    const html = await $fetch('/')
+    expect(html).toContain('Forwarded heading slot')
+    expect(html).toContain('PREV-ICON')
+    expect(html).toContain('NEXT-ICON')
   })
 })

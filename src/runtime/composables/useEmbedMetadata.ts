@@ -11,7 +11,9 @@ interface OEmbedResponse {
 }
 
 // Module-level cache: every carousel instance shares one in-flight request per
-// URL, and repeat mounts (SPA navigation) don't refetch.
+// URL, and repeat mounts (SPA navigation) don't refetch. Failures (network
+// error, non-OK response) are evicted below so a later call retries instead
+// of resolving to a cached `null` forever.
 const cache = new Map<string, Promise<EmbedMetadata | null>>()
 
 const fetchOEmbed = (endpoint: string): Promise<EmbedMetadata | null> => {
@@ -34,6 +36,10 @@ const fetchOEmbed = (endpoint: string): Promise<EmbedMetadata | null> => {
         : null,
     )
     .catch(() => null)
+    .then((result) => {
+      if (result === null) cache.delete(endpoint)
+      return result
+    })
   cache.set(endpoint, request)
   return request
 }

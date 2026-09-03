@@ -71,6 +71,7 @@ tasks:
       - task: test:types
       - task: test
       - task: build
+      - task: build:playground
 
   clean:
     desc: "Remove build artifacts and generated dirs (dist, .nuxt, .output, coverage)"

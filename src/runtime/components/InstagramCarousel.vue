@@ -3,47 +3,23 @@
     ref="rootEl"
     class="weburz-instagram-carousel"
   >
-    <BaseCarousel
-      :options="options"
-      :plugins="plugins"
-      :slides-per-view="slidesPerView"
-      :show-arrows="showArrows"
-      :show-dots="showDots"
-      :arrow-position="arrowPosition"
-      :layout="layout"
-      :aside-position="asidePosition"
-      :title="title"
-      :description="description"
-      :aria-label="ariaLabel"
+    <EmbedCarousel
+      v-bind="sharedProps"
+      :captions="captions"
+      :active-index="activeIndex"
+      :active-caption="activeCaption"
       @select="onSelect"
     >
+      <!-- Forward every named slot (heading, prevIcon, nextIcon) untouched;
+           the default slot is the slides below. -->
       <template
-        v-if="$slots.heading || captions === 'active'"
-        #heading="headingProps"
+        v-for="name in Object.keys($slots).filter(slot => slot !== 'default')"
+        #[name]="slotProps"
       >
         <slot
-          name="heading"
-          v-bind="headingProps"
-        >
-          <CarouselActiveCaption
-            :active-key="activeIndex"
-            :title="activeTitle"
-            :href="activeHref"
-            :description="activeDescription"
-          />
-        </slot>
-      </template>
-      <template
-        v-if="$slots.prevIcon"
-        #prevIcon
-      >
-        <slot name="prevIcon" />
-      </template>
-      <template
-        v-if="$slots.nextIcon"
-        #nextIcon
-      >
-        <slot name="nextIcon" />
+          :name="name"
+          v-bind="slotProps"
+        />
       </template>
       <BaseSlide
         v-for="(post, index) in posts"
@@ -51,9 +27,9 @@
       >
         <div class="weburz-instagram-media">
           <iframe
-            :ref="(el: unknown) => bindIframe(el, index)"
+            :ref="(el: unknown) => bindIframe(el, post.url)"
             class="weburz-instagram-embed"
-            :src="embedUrl(post.url)"
+            :src="buildInstagramEmbedUrl(post.url)"
             :title="post.title ?? `Instagram post ${index + 1}`"
             loading="lazy"
             frameborder="0"
@@ -62,37 +38,42 @@
             allow="encrypted-media"
           />
           <button
-            v-if="tapToInteract && unlockedIndex !== index"
+            v-if="tapToInteract && unlockedPost !== post.url"
             type="button"
             class="weburz-instagram-overlay"
             :aria-label="`Interact with ${post.title ?? `Instagram post ${index + 1}`}`"
-            @click="unlock(index)"
+            @click="unlock(post.url)"
           />
         </div>
         <CarouselCaption
           v-if="captions === 'per-slide' && (post.title || post.description)"
-          :title="post.title"
-          :href="post.url"
-          :description="post.description"
+          v-bind="slideCaption(post)"
         />
       </BaseSlide>
-    </BaseCarousel>
+    </EmbedCarousel>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { CarouselSharedProps, InstagramPost } from '../types'
+import type { PropType } from 'vue'
+import type { CaptionsMode, InstagramPost, SlideCaption } from '../types'
 import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
 import { buildInstagramEmbedUrl } from '../utils/embeds'
-import CarouselActiveCaption from './CarouselActiveCaption.vue'
+import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import CarouselCaption from './CarouselCaption.vue'
+import EmbedCarousel from './EmbedCarousel.vue'
 
-interface Props extends CarouselSharedProps {
-  posts: InstagramPost[]
-  pauseOnLeave?: boolean
-  onScrollAway?: 'pause' | 'none'
+const props = defineProps({
+  ...carouselSharedProps,
+  posts: { type: Array as PropType<InstagramPost[]>, required: true },
+  pauseOnLeave: { type: Boolean, default: true },
+  // Instagram has no postMessage control API. The only way to halt a reel is
+  // to unload the iframe (about:blank), which forces it to reload when the user
+  // scrolls back into view. Default to "pause" because "audio keeps playing
+  // while user scrolls elsewhere" is a worse UX than "video restarts on return".
+  onScrollAway: { type: String as PropType<'pause' | 'none'>, default: 'pause' },
   /**
    * Cover each embed with a transparent layer so touch-drags reach the
    * carousel instead of dying inside Instagram's cross-origin iframe (touches
@@ -100,69 +81,55 @@ interface Props extends CarouselSharedProps {
    * cannot be hand-swiped on mobile). Tapping the layer unlocks the post for
    * interaction; it locks again when the active slide changes.
    */
-  tapToInteract?: boolean
+  tapToInteract: { type: Boolean, default: true },
   /**
    * Per-item text display: under every slide ('per-slide'), one heading-area
    * block showing the active slide's title/description ('active'), or none.
    * Text comes from `posts[].title` / `posts[].description` only — Instagram
    * has no public metadata API to auto-fetch from.
    */
-  captions?: 'none' | 'per-slide' | 'active'
-}
+  captions: { type: String as PropType<CaptionsMode>, default: 'per-slide' },
+})
 
-const props = withDefaults(defineProps<Props>(), {
-  pauseOnLeave: true,
-  // Instagram has no postMessage control API. The only way to halt a reel is
-  // to unload the iframe (about:blank), which forces it to reload when the user
-  // scrolls back into view. Default to "pause" because "audio keeps playing
-  // while user scrolls elsewhere" is a worse UX than "video restarts on return".
-  onScrollAway: 'pause',
-  tapToInteract: true,
-  captions: 'per-slide',
-  options: () => ({}),
-  plugins: () => [],
-  slidesPerView: 1,
-  showArrows: true,
-  showDots: true,
-  arrowPosition: 'below',
-  layout: 'stacked',
-  asidePosition: 'left',
-  title: undefined,
-  description: undefined,
-  ariaLabel: undefined,
+const sharedProps = computed(() => pickCarouselSharedProps(props))
+
+const slideCaption = (post: InstagramPost): SlideCaption => ({
+  title: post.title,
+  href: post.url,
+  description: post.description,
 })
 
 const rootEl = ref<HTMLElement | null>(null)
 const activeIndex = ref(0)
-const activePost = computed(() => props.posts[activeIndex.value])
-const activeTitle = computed(() => activePost.value?.title)
-const activeHref = computed(() => activePost.value?.url)
-const activeDescription = computed(() => activePost.value?.description)
-
-// Instagram's direct embed URL bypasses embed.js entirely — works even when
-// content blockers drop instagram.com/embed.js (see buildInstagramEmbedUrl).
-const embedUrl = (url: string) => buildInstagramEmbedUrl(url)
+const activeCaption = computed(() => {
+  const post = props.posts[activeIndex.value]
+  return post ? slideCaption(post) : undefined
+})
 
 // IG has no postMessage control API, so pause = park the iframe (src → about:blank).
 // On scroll-back / swipe-back the original src is restored, which causes a brief
 // reload of the embed. Acceptable trade-off; opt out via prop if it bothers you.
 
-const { bind: bindIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<number>()
+// Keyed by URL (not slide index) so reordering the `posts` prop keeps
+// park/restore state attached to the right embed.
+const { bind: bindIframe, park, restore, parkAll, restoreAll } = useFrameRegistry<string>()
 
 // Embla cancels the click that follows a drag, so dragging across the overlay
 // never accidentally unlocks a post.
-const unlockedIndex = ref<number | null>(null)
-const unlock = (index: number) => {
-  unlockedIndex.value = index
+const unlockedPost = ref<string | null>(null)
+const unlock = (url: string) => {
+  unlockedPost.value = url
 }
 
 const onSelect = (index: number) => {
   const previousIndex = activeIndex.value
   activeIndex.value = index
-  unlockedIndex.value = null
+  unlockedPost.value = null
   if (!props.pauseOnLeave) return
-  park(previousIndex)
-  restore(index)
+  const previous = props.posts[previousIndex]?.url
+  const current = props.posts[index]?.url
+  if (previous) park(previous)
+  if (current) restore(current)
 }
 
 useScrollAwayHandler(
