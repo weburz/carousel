@@ -21,6 +21,12 @@ describe('@weburz/carousel', async () => {
     expect(html).toContain('aria-label="Next slide"')
   })
 
+  it('marks slides with the WAI-ARIA slide role', async () => {
+    const html = await $fetch('/')
+    expect(html).toMatch(/class="weburz-carousel__slide"[^>]*role="group"/)
+    expect(html).toContain('aria-roledescription="slide"')
+  })
+
   it('places arrows beside the dots by default', async () => {
     const html = await $fetch('/')
     expect(html).toContain('weburz-carousel__stage--arrows-below')

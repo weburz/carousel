@@ -8,6 +8,7 @@
     :data-weburz-slides="slidesCss ? uid : undefined"
     aria-roledescription="carousel"
     :aria-label="ariaLabel ?? title"
+    @keydown="onKeydown"
   >
     <component
       :is="'style'"
@@ -135,6 +136,7 @@
 <script setup lang="ts">
 import { computed, onMounted, provide, useId, watch } from 'vue'
 import { useCarousel } from '../composables/useCarousel'
+import { carouselKeyAction } from '../utils/keyboard'
 import { buildSlidesCss, resolveBaseSlides } from '../utils/slides'
 import { carouselSharedProps } from '../utils/carouselProps'
 
@@ -202,6 +204,23 @@ if (import.meta.dev) {
 }
 
 watch(activeIndex, i => emit('select', i))
+
+// Arrow keys (mirrored for RTL) and Home/End navigate while focus is anywhere
+// inside the carousel — arrows, dots, facades, overlays. Keys typed into
+// form fields inside a slide are left alone.
+const isEditable = (target: EventTarget | null) =>
+  target instanceof HTMLElement
+  && (target.isContentEditable || /^(?:INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.altKey || event.ctrlKey || event.metaKey || isEditable(event.target)) return
+  const action = carouselKeyAction(event.key, props.options.direction)
+  if (!action) return
+  event.preventDefault()
+  if (action === 'prev') prev()
+  else if (action === 'next') next()
+  else scrollTo(action === 'first' ? 0 : slideCount.value - 1)
+}
 
 // Arrows are pointless with a single scroll position, so hide them once Embla
 // reports one. slideCount is 0 until Embla initializes (and during SSR) —

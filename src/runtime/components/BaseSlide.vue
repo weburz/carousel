@@ -1,6 +1,8 @@
 <template>
   <div
     class="weburz-carousel__slide"
+    role="group"
+    aria-roledescription="slide"
     :style="{ '--weburz-carousel-slide-count': slidesPerView }"
   >
     <slot />
