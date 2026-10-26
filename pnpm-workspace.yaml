@@ -5,12 +5,12 @@ packages:
 # hours. Pin the highest aged versions that still satisfy the ranges and
 # the patched releases for the advisory versions below.
 overrides:
-  # nuxt 4.5.1 accepts vite ^8.1.5; hold the previous 8.2 patch.
-  vite: 8.2.0
+  # 8.2.0–8.2.3 are vulnerable (dependabot); 8.3.5 is aged and nuxt-compatible.
+  vite: 8.3.5
   caniuse-lite: 1.0.30001800
   update-browserslist-db: 1.2.3
-  # svgo < 4.0.2 is vulnerable (GHSA-2p49-hgcm-8545).
-  svgo: 4.0.2
+  # svgo < 4.1.0 is vulnerable (GHSA-2p49-hgcm-8545 and a later advisory).
+  svgo: 4.1.0
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
