@@ -410,6 +410,25 @@ cascade, so a map on `<TikTokCarousel>` behaves identically.
 Keep the plain number for counts that are genuinely static
 (`:slides-per-view="2"`).
 
+## Accessibility
+
+Every carousel follows the WAI-ARIA carousel pattern: the root is a labelled
+region with `aria-roledescription="carousel"` (label from `ariaLabel`, else
+`title`), and each slide is a `role="group"` with
+`aria-roledescription="slide"`.
+
+While focus is anywhere inside a carousel (arrows, dots, a facade button),
+the keyboard navigates it:
+
+| Key | Action |
+|-----|--------|
+| `←` / `→` | Previous / next slide (mirrored with `options.direction: 'rtl'`) |
+| `Home` / `End` | First / last slide |
+
+Keys pressed in form fields inside a slide, or with a modifier held, are left
+alone. Focus inside a cross-origin embed (a live YouTube/TikTok/Instagram
+iframe) belongs to that iframe, so keys there never reach the carousel.
+
 ## Module options
 
 | Option   | Type     | Default | Description                                                      |
