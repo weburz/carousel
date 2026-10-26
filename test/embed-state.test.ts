@@ -103,3 +103,53 @@ describe('useFrameRegistry bind', () => {
     expect(get(1)).toBeUndefined()
   })
 })
+
+describe('useFrameRegistry parkAll / restoreAll', () => {
+  const makeFrame = (src: string) => {
+    const frame = document.createElement('iframe')
+    frame.src = src
+    return frame
+  }
+
+  it('restores every frame the sweep parked', () => {
+    const { bind, parkAll, restoreAll } = useFrameRegistry<string>()
+    const a = makeFrame('https://example.com/a')
+    const b = makeFrame('https://example.com/b')
+    bind(a, 'a')
+    bind(b, 'b')
+    parkAll()
+    expect(a.src).toBe('about:blank')
+    expect(b.src).toBe('about:blank')
+    restoreAll()
+    expect(a.src).toBe('https://example.com/a')
+    expect(b.src).toBe('https://example.com/b')
+  })
+
+  it('leaves individually parked frames parked', () => {
+    // pauseOnLeave parks the slide the user swiped away from; scrolling the
+    // carousel out of view and back must not reload it.
+    const { bind, park, parkAll, restoreAll } = useFrameRegistry<string>()
+    const active = makeFrame('https://example.com/active')
+    const left = makeFrame('https://example.com/left')
+    bind(active, 'active')
+    bind(left, 'left')
+    park('left')
+    parkAll()
+    restoreAll()
+    expect(active.src).toBe('https://example.com/active')
+    expect(left.src).toBe('about:blank')
+  })
+
+  it('restores a swept frame only once', () => {
+    const { bind, parkAll, restoreAll, park, restore } = useFrameRegistry<string>()
+    const a = makeFrame('https://example.com/a')
+    bind(a, 'a')
+    parkAll()
+    restoreAll()
+    park('a')
+    restoreAll()
+    expect(a.src).toBe('about:blank')
+    restore('a')
+    expect(a.src).toBe('https://example.com/a')
+  })
+})

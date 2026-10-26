@@ -38,6 +38,10 @@ export const restoreFrame = (frame: FrameLike) => {
 export const useFrameRegistry = <Key extends string | number>() => {
   const frames = new Map<Key, HTMLIFrameElement>()
   const bound = new Set<Key>()
+  // Keys parked by the last parkAll sweep. restoreAll restores only these, so
+  // frames parked individually (pauseOnLeave) stay parked when the carousel
+  // scrolls back into view instead of all reloading at once.
+  const swept = new Set<Key>()
 
   const bind = (
     el: unknown,
@@ -56,20 +60,36 @@ export const useFrameRegistry = <Key extends string | number>() => {
   const remove = (key: Key) => {
     frames.delete(key)
     bound.delete(key)
+    swept.delete(key)
   }
 
   const park = (key: Key) => {
+    swept.delete(key)
     const frame = frames.get(key)
     if (frame) parkFrame(frame)
   }
 
   const restore = (key: Key) => {
+    swept.delete(key)
     const frame = frames.get(key)
     if (frame) restoreFrame(frame)
   }
 
-  const parkAll = () => frames.forEach(parkFrame)
-  const restoreAll = () => frames.forEach(restoreFrame)
+  const parkAll = () => {
+    frames.forEach((frame, key) => {
+      if (frame.dataset.savedSrc) return
+      parkFrame(frame)
+      if (frame.dataset.savedSrc) swept.add(key)
+    })
+  }
+
+  const restoreAll = () => {
+    swept.forEach((key) => {
+      const frame = frames.get(key)
+      if (frame) restoreFrame(frame)
+    })
+    swept.clear()
+  }
 
   return { bind, get, remove, park, restore, parkAll, restoreAll }
 }
