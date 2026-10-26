@@ -8,12 +8,16 @@ repos:
       - id: check-added-large-files
       - id: no-commit-to-branch
 
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.4.0
+  # Local hook: runs the project's own ESLint + flat config. mirrors-eslint
+  # installs ESLint in an isolated env without @nuxt/eslint-config.
+  # types_or (not types, which ANDs the tags) so any one match lints the file.
+  - repo: local
     hooks:
       - id: eslint
         name: lint JS/TS and Vue files
-        types:
+        entry: pnpm exec eslint
+        language: system
+        types_or:
           - vue
           - javascript
           - ts
