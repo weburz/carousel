@@ -87,6 +87,6 @@ tasks:
       - rm -rf node_modules playground/node_modules
 
   release:
-    desc: "Lint, test, build, bump version + CHANGELOG, publish to npm, push tags"
+    desc: "Run every CI gate, bump version + CHANGELOG, publish to npm, push tags"
     cmds:
       - pnpm run release

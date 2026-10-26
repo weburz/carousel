@@ -509,8 +509,9 @@ commit with `git commit --no-verify` (use sparingly).
 task release
 ```
 
-Lints, tests, builds the module, bumps the version + CHANGELOG via
-`changelogen`, publishes to npm, and pushes the tag. The `Deploy Playground`
+Runs every CI gate (lint, type-check, tests, module build, playground build
+against `dist/`), bumps the version + CHANGELOG via `changelogen`, publishes to
+npm (`npm login` first), and pushes the tag. The `Deploy Playground`
 workflow publishes `playground/` to GitHub Pages on every push to `main`.
 
 ## License
