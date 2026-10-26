@@ -98,7 +98,7 @@ import type {
   InstagramPost,
   TikTokVideo,
   YouTubeVideo,
-} from '../../../src/runtime/types'
+} from '../../../src/module'
 
 const ytVideos: YouTubeVideo[] = [
   {

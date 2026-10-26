@@ -292,7 +292,7 @@ import type {
   InstagramPost,
   TikTokVideo,
   YouTubeVideo,
-} from '../src/runtime/types'
+} from '../src/module'
 import { demoSlides } from './utils/demoSlides'
 
 const themes = ['light', 'dark', 'neutral'] as const

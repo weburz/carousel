@@ -124,6 +124,16 @@ from outside the iframe, so "pause" is implemented by unloading the iframe
 audio never keeps playing off-screen. Opt out with `:pause-on-leave="false"` /
 `on-scroll-away="none"`.
 
+### Types
+
+Every data/prop type is exported from the package entry:
+
+```ts
+import type { InstagramPost, SlidesPerView, TikTokVideo, YouTubeVideo } from '@weburz/carousel'
+
+const videos: YouTubeVideo[] = [{ id: 'dQw4w9WgXcQ', kind: 'video' }]
+```
+
 ### The hero treatment
 
 ```vue
