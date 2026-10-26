@@ -5,6 +5,11 @@ import {
   defineNuxtModule,
 } from '@nuxt/kit'
 
+// Public prop/data types, importable from the package entry
+// (`import type { YouTubeVideo } from '@weburz/carousel'`) — `exports` blocks
+// deep imports into dist/runtime.
+export type * from './runtime/types'
+
 export interface ModuleOptions {
   /**
    * Component name prefix. Set to "" to disable the prefix.
