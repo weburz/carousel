@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## v0.4.0
+
+[compare changes](https://github.com/Weburz/carousel/compare/v0.3.4...v0.4.0)
+
+### 🚀 Enhancements
+
+- **a11y:** Keyboard navigation and WAI-ARIA slide roles ([#38](https://github.com/Weburz/carousel/pull/38))
+
+### 🩹 Fixes
+
+- **types:** Export public types from the package entry ([#34](https://github.com/Weburz/carousel/pull/34))
+- **embeds:** Restore only sweep-parked frames on scroll-back ([#35](https://github.com/Weburz/carousel/pull/35))
+
+### 💅 Refactors
+
+- Extract EmbedCarousel shell and EmbedFacade from the platform wrappers ([#27](https://github.com/Weburz/carousel/pull/27))
+- Key embed state by URL, retry failed oEmbed lookups, dedupe playground ([#29](https://github.com/Weburz/carousel/pull/29))
+
+### 🏡 Chore
+
+- Run every gate in the release script and fix the ESLint pre-commit hook ([#36](https://github.com/Weburz/carousel/pull/36))
+
+### ❤️ Contributors
+
+- Sagar Kapoor ([@sagar-kap](https://github.com/sagar-kap))
+
 ## v0.3.4
 
 [compare changes](https://github.com/Weburz/carousel/compare/v0.3.3...v0.3.4)
