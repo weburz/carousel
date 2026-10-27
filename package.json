@@ -49,10 +49,11 @@
   },
   "scripts": {
     "prepack": "nuxt-module-build build",
+    "check:dist": "node scripts/check-dist.mjs",
     "dev": "pnpm dev:prepare && nuxt dev playground",
     "dev:build": "nuxt build playground",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxt prepare playground",
-    "release": "pnpm lint && pnpm dev:prepare && pnpm test:types && pnpm test && pnpm prepack && pnpm dev:build && changelogen --release && pnpm publish && git push --follow-tags",
+    "release": "pnpm lint && pnpm dev:prepare && pnpm test:types && pnpm test && pnpm prepack && pnpm check:dist && pnpm dev:build && changelogen --release && pnpm publish && git push --follow-tags",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",

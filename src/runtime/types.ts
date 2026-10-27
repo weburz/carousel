@@ -1,5 +1,19 @@
+import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
+
 /** The shared subset of a wrapper's props — types AND defaults live in `carouselSharedProps`. */
 export type { CarouselSharedProps } from './utils/carouselProps'
+
+/**
+ * Embla options/plugins under names this package exports. Interfaces (not
+ * re-exported aliases) so declaration emit refers to them by name — Embla's
+ * own aliases expand to types in non-exported internal paths, which TypeScript
+ * cannot name (TS2883), and the module builder then writes empty component
+ * declarations.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- the name is the point
+export interface CarouselOptions extends EmblaOptionsType {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- the name is the point
+export interface CarouselPlugin extends EmblaPluginType {}
 
 // `asidePosition` is only valid when `layout: 'aside'`.
 export type AsidePosition = 'left' | 'right'

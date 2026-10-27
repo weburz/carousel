@@ -29,6 +29,11 @@ tasks:
     cmds:
       - pnpm run prepack
 
+  check:dist:
+    desc: "Fail if the module build emitted any empty declaration (.d.ts) files"
+    cmds:
+      - pnpm run check:dist
+
   build:playground:
     desc: "Build the playground app"
     cmds:
@@ -71,6 +76,7 @@ tasks:
       - task: test:types
       - task: test
       - task: build
+      - task: check:dist
       - task: build:playground
 
   clean:
