@@ -50,5 +50,8 @@ jobs:
       - name: Build
         run: pnpm prepack
 
+      - name: Check emitted declarations
+        run: pnpm check:dist
+
       - name: Build playground against dist
         run: pnpm dev:build

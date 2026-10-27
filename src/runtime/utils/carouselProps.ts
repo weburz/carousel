@@ -1,6 +1,5 @@
 import type { ExtractPublicPropTypes, PropType } from 'vue'
-import type { EmblaOptionsType, EmblaPluginType } from 'embla-carousel'
-import type { AsidePosition, SlidesPerView } from '../types'
+import type { AsidePosition, CarouselOptions, CarouselPlugin, SlidesPerView } from '../types'
 
 /**
  * Presentation surface shared by BaseCarousel and every platform wrapper —
@@ -11,9 +10,9 @@ import type { AsidePosition, SlidesPerView } from '../types'
  */
 export const carouselSharedProps = {
   /** Embla options passed through live (the prop is watched, not captured). */
-  options: { type: Object as PropType<EmblaOptionsType>, default: () => ({}) },
+  options: { type: Object as PropType<CarouselOptions>, default: () => ({}) },
   /** Embla plugins, passed through live the same way. */
-  plugins: { type: Array as PropType<EmblaPluginType[]>, default: () => [] },
+  plugins: { type: Array as PropType<CarouselPlugin[]>, default: () => [] },
   /** Slides visible at once — a plain number or an SSR-safe breakpoint map. */
   slidesPerView: { type: [Number, Object] as PropType<SlidesPerView>, default: 1 },
   /** Render prev/next arrows. Hidden automatically for a single-snap carousel. */
