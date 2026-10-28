@@ -151,7 +151,7 @@
         :videos="ttVideos"
         layout="aside"
         title="From TikTok"
-        description="Thumbnails come from TikTok's keyless oEmbed; tap to load the player, swipe away to destroy it."
+        description="Paused cover frames (TikTok's oEmbed no longer returns thumbnails); tap to load the player, swipe away to destroy it."
       />
     </section>
 

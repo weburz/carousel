@@ -79,7 +79,8 @@ export interface TikTokVideo {
   description?: string
   /**
    * Facade thumbnail override. Omit to auto-fetch it from TikTok's keyless
-   * oEmbed endpoint.
+   * oEmbed endpoint; when that has none (TikTok currently returns none), the
+   * facade shows the video's paused cover frame from TikTok's player instead.
    */
   thumbnail?: string
 }

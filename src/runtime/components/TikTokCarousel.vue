@@ -25,33 +25,54 @@
         v-for="(video, index) in videos"
         :key="video.url"
       >
-        <EmbedFacade
+        <div
           v-if="mode === 'facade' && !isActivated(video.url)"
           class="weburz-tiktok-embed weburz-tiktok-facade"
-          :label="`Play ${captionTitle(video) ?? `TikTok video ${index + 1}`}`"
-          :thumbnail="thumbUrl(video)"
-          :alt="captionTitle(video) ?? ''"
-          @activate="activate(video.url)"
+          :class="{ 'weburz-tiktok-facade--preview': showPreview(video) }"
         >
-          <template #icon>
-            <svg
-              viewBox="0 0 48 48"
-              width="48"
-              height="48"
-            >
-              <circle
-                fill="currentColor"
-                cx="24"
-                cy="24"
-                r="24"
-              />
-              <path
-                d="M33 24 19.5 16.2v15.6"
-                fill="#fff"
-              />
-            </svg>
-          </template>
-        </EmbedFacade>
+          <!-- No thumbnail image (TikTok's oEmbed no longer returns one):
+               show the video's cover frame from TikTok's player instead,
+               paused and chrome-less. Inert and click-through, so the play
+               button above still owns taps and drags stay on the page. -->
+          <iframe
+            v-if="showPreview(video)"
+            class="weburz-tiktok-preview"
+            :src="buildTikTokPreviewUrl(video.url)"
+            title=""
+            inert
+            aria-hidden="true"
+            tabindex="-1"
+            loading="lazy"
+            frameborder="0"
+            scrolling="no"
+          />
+          <EmbedFacade
+            :label="`Play ${captionTitle(video) ?? `TikTok video ${index + 1}`}`"
+            :thumbnail="thumbUrl(video)"
+            :alt="captionTitle(video) ?? ''"
+            @activate="activate(video.url)"
+            @thumbnail-error="markThumbMissing(video.url)"
+          >
+            <template #icon>
+              <svg
+                viewBox="0 0 48 48"
+                width="48"
+                height="48"
+              >
+                <circle
+                  fill="currentColor"
+                  cx="24"
+                  cy="24"
+                  r="24"
+                />
+                <path
+                  d="M33 24 19.5 16.2v15.6"
+                  fill="#fff"
+                />
+              </svg>
+            </template>
+          </EmbedFacade>
+        </div>
         <iframe
           v-else
           :ref="(el: unknown) => bindIframe(el, video.url)"
@@ -86,7 +107,7 @@ import { useEmbedMetadata } from '../composables/useEmbedMetadata'
 import { useFacadeActivation } from '../composables/useFacadeActivation'
 import { useFrameRegistry } from '../composables/useFrameRegistry'
 import { useScrollAwayHandler } from '../composables/useScrollAwayHandler'
-import { buildTikTokEmbedUrl } from '../utils/embeds'
+import { buildTikTokEmbedUrl, buildTikTokPreviewUrl } from '../utils/embeds'
 import { carouselSharedProps, pickCarouselSharedProps } from '../utils/carouselProps'
 import CarouselCaption from './CarouselCaption.vue'
 import EmbedCarousel from './EmbedCarousel.vue'
@@ -121,8 +142,22 @@ const fetchedThumbs = ref<Record<string, string>>({})
 const captionTitle = (video: TikTokVideo) =>
   video.title ?? fetchedTitles.value[video.url]
 
+// URLs whose thumbnail image is known to be unavailable: oEmbed answered
+// without one, or the image failed to load. Those facades show the player
+// cover frame instead (see `buildTikTokPreviewUrl`).
+const missingThumbs = ref<Record<string, true>>({})
+
 const thumbUrl = (video: TikTokVideo) =>
-  video.thumbnail ?? fetchedThumbs.value[video.url]
+  missingThumbs.value[video.url]
+    ? undefined
+    : video.thumbnail ?? fetchedThumbs.value[video.url]
+
+const showPreview = (video: TikTokVideo) =>
+  Boolean(missingThumbs.value[video.url] && buildTikTokPreviewUrl(video.url))
+
+const markThumbMissing = (url: string) => {
+  missingThumbs.value[url] = true
+}
 
 const slideCaption = (video: TikTokVideo): SlideCaption => ({
   title: captionTitle(video),
@@ -132,8 +167,9 @@ const slideCaption = (video: TikTokVideo): SlideCaption => ({
 
 const fetchMissingMetadata = () => {
   // `fetchMetadata` governs optional caption titles only. Facade thumbnails
-  // are NOT optional metadata — without one the facade is a blank box — so
-  // they're fetched whenever facade mode needs them, regardless of the flag.
+  // are NOT optional metadata — without one the facade falls back to the
+  // heavier player cover frame — so they're fetched whenever facade mode
+  // needs them, regardless of the flag.
   // (Pass `thumbnail` per video to skip the oEmbed request entirely.)
   // One oEmbed request (shared via the module-level cache) serves both.
   const needsTitles = props.fetchMetadata && props.captions !== 'none'
@@ -144,6 +180,7 @@ const fetchMissingMetadata = () => {
     forTikTok(video.url).then((meta) => {
       if (meta?.title) fetchedTitles.value[video.url] = meta.title
       if (meta?.thumbnailUrl) fetchedThumbs.value[video.url] = meta.thumbnailUrl
+      else if (wantsThumb) markThumbMissing(video.url)
     })
   }
 }
@@ -232,7 +269,7 @@ useScrollAwayHandler(
    both .weburz-tiktok-embed and EmbedFacade's .weburz-facade — equal
    single-class specificity would be injection-order dependent. */
 .weburz-tiktok-embed.weburz-tiktok-facade {
-  /* The button's children are absolutely positioned, so unlike the iframe
+  /* The facade's children are absolutely positioned, so unlike the iframe
      (intrinsic 300px) it has ZERO intrinsic width — in an auto-sized flex or
      grid track the whole carousel collapses to its nav row's width. Claim the
      embed card's width explicitly; max-width still lets narrow slides shrink
@@ -243,5 +280,26 @@ useScrollAwayHandler(
   --weburz-facade-play-size: var(--weburz-tiktok-play-size, 3.5rem);
   --weburz-facade-play-bg: var(--weburz-tiktok-play-bg, rgb(0 0 0 / 0.7));
   --weburz-facade-play-bg-hover: var(--weburz-tiktok-play-bg-hover, #fe2c55);
+  position: relative;
+}
+
+/* The play button and the preview frame both fill the facade box. (A child
+   component's root carries this scope id, so no :deep() needed.) */
+.weburz-tiktok-facade > .weburz-facade,
+.weburz-tiktok-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.weburz-tiktok-preview {
+  border: 0;
+  pointer-events: none;
+}
+
+/* Let the cover frame show through the button. */
+.weburz-tiktok-facade--preview {
+  --weburz-facade-bg: transparent;
 }
 </style>

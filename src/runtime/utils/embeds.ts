@@ -58,6 +58,33 @@ export const buildTikTokEmbedUrl = (postUrl: string): string => {
 }
 
 /**
+ * TikTok player/v1 URL that renders the video's cover frame without playing
+ * it — the facade's preview when no thumbnail image is available (TikTok's
+ * oEmbed stopped returning `thumbnail_url`). All player chrome is off: the
+ * facade draws its own play button on top. Undefined when the share link
+ * carries no video id, so callers render nothing rather than a broken frame.
+ */
+export const buildTikTokPreviewUrl = (postUrl: string): string | undefined => {
+  const id = postUrl.match(/\/video\/(\d+)/)?.[1]
+  if (!id) return undefined
+  const params = new URLSearchParams({
+    autoplay: '0',
+    controls: '0',
+    progress_bar: '0',
+    play_button: '0',
+    volume_control: '0',
+    fullscreen_button: '0',
+    timestamp: '0',
+    music_info: '0',
+    description: '0',
+    rel: '0',
+    native_context_menu: '0',
+    closed_caption: '0',
+  })
+  return `https://www.tiktok.com/player/v1/${id}?${params}`
+}
+
+/**
  * Instagram direct-embed URL (bypasses embed.js entirely). /embed/captioned/
  * rather than /embed/: the captionless variant responds with
  * X-Frame-Options: DENY and refuses to render inside iframes.

@@ -110,9 +110,13 @@ upfront? `mode="iframe-embed"`. Need programmatic control
 </template>
 ```
 
-TikTok defaults to `mode="facade"` like YouTube: the thumbnail comes from
-TikTok's keyless oEmbed endpoint, and the player iframe (which autoplays on
-load) is only created when the user taps. Instagram has no keyless thumbnail
+TikTok defaults to `mode="facade"` like YouTube: the player iframe (which
+autoplays on load) is only created when the user taps. The facade shows the
+per-video `thumbnail` if you pass one, else the oEmbed thumbnail — and since
+TikTok's oEmbed stopped returning thumbnails, it falls back to the video's
+cover frame from TikTok's `player/v1` endpoint (paused, no player chrome,
+inert so drags and taps still go to the facade). Pass `thumbnail` to skip
+that extra frame. Instagram has no keyless thumbnail
 source, so it keeps its iframes but covers each with a **tap-to-interact
 overlay** (`tapToInteract`, on by default): drags land on the page — so the
 carousel stays hand-swipeable — and a tap unlocks the post for real
@@ -194,7 +198,7 @@ Shared by all carousels:
 | `pauseOnLeave` | `boolean` | `true` | Unload the previous slide's iframe on swipe |
 | `onScrollAway` | `'pause' \| 'none'` | `'pause'` | Unload all iframes when the carousel leaves the viewport |
 | `captions` | `'none' \| 'per-slide' \| 'active'` | IG `'per-slide'`, TikTok `'none'` | Per-item text mode. Off for TikTok by default — its embed already shows the caption inside the iframe |
-| `fetchMetadata` | `boolean` | `true` | TikTok only: auto-fetch missing caption titles from TikTok's oEmbed. Facade thumbnails are fetched regardless — they're not optional metadata; without one the facade is a blank box. Per-video `thumbnail` skips the request |
+| `fetchMetadata` | `boolean` | `true` | TikTok only: auto-fetch missing caption titles from TikTok's oEmbed. Facade thumbnails are fetched regardless — they're not optional metadata. Without one the facade falls back to the player's cover frame. Per-video `thumbnail` skips the request |
 
 All carousels emit `select` with the new active index.
 
@@ -251,7 +255,9 @@ id (override with `url`).
 When a title is omitted, it is fetched client-side from the platform's public
 oEmbed endpoint (no auth, CORS-enabled, cached per URL across all carousels):
 
-- **YouTube** ✅ and **TikTok** ✅ — titles arrive shortly after mount.
+- **YouTube** ✅ — titles arrive shortly after mount.
+- **TikTok** ⚠️ — its oEmbed currently returns no `title`, so auto-captions
+  stay empty; pass `title` explicitly if you enable TikTok captions.
 - **Instagram** ❌ — its oEmbed has required a Facebook app token since 2020,
   so Instagram captions only render from explicit `title` / `description`.
 
