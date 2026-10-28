@@ -12,10 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### 🩹 Fixes
 
 - **types:** Emit component declarations again ([#40](https://github.com/Weburz/carousel/pull/40))
+- **tiktok:** Show the player cover frame when no thumbnail is available ([#42](https://github.com/Weburz/carousel/pull/42))
+
+### 🏡 Chore
+
+- **release:** V0.4.1 ([#41](https://github.com/Weburz/carousel/pull/41))
 
 ### ❤️ Contributors
 
-- Sagar Kapoor ([@sagar-kap](https://github.com/sagar-kap))
+- Sagar Kapoor
 
 ## v0.4.0
 
