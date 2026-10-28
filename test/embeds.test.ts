@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildInstagramEmbedUrl,
   buildTikTokEmbedUrl,
+  buildTikTokPreviewUrl,
   buildYouTubeEmbedUrl,
   defaultYouTubeThumbnailUrl,
   youtubeWatchUrl,
@@ -68,6 +69,26 @@ describe('buildTikTokEmbedUrl', () => {
   it('returns an empty embeds path when the id is missing', () => {
     expect(buildTikTokEmbedUrl('https://www.tiktok.com/@test'))
       .toBe('https://www.tiktok.com/embed/v2/')
+  })
+})
+
+describe('buildTikTokPreviewUrl', () => {
+  it('points at the player/v1 endpoint with autoplay and chrome off', () => {
+    const url = new URL(buildTikTokPreviewUrl('https://www.tiktok.com/@test/video/1234567890?is_from_webapp=1')!)
+    expect(`${url.origin}${url.pathname}`).toBe('https://www.tiktok.com/player/v1/1234567890')
+    expect(url.searchParams.get('autoplay')).toBe('0')
+    expect(url.searchParams.get('controls')).toBe('0')
+    expect(url.searchParams.get('description')).toBe('0')
+    expect(url.searchParams.get('music_info')).toBe('0')
+  })
+
+  it('does not leak share-link query params', () => {
+    expect(buildTikTokPreviewUrl('https://www.tiktok.com/@test/video/1234567890?_r=1&_t=tracker'))
+      .not.toContain('tracker')
+  })
+
+  it('returns undefined when the share link has no video id', () => {
+    expect(buildTikTokPreviewUrl('https://www.tiktok.com/@test')).toBeUndefined()
   })
 })
 
